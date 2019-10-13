@@ -19,7 +19,7 @@ namespace IPIO
             _algorithm = new DimAlgorithm();
         }
 
-        private async void Button_Click_1(object sender, RoutedEventArgs e)
+        private async void ChooseFileButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog();
             dialog.Filter = IMG_FILE_FILTERS;

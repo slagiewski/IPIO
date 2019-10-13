@@ -2,13 +2,13 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace IPIO.Core.Extensions
 {
     public static class BitmapExtensions
     {
+        //add bitmap metadata to the func arguments
         public static Bitmap Select(this Bitmap bmp, Func<Pixel, Pixel> expression)
         {
             var bitmapData = LockBitmap(bmp);
@@ -61,6 +61,8 @@ namespace IPIO.Core.Extensions
             Marshal.Copy(addressOfTheFirstLine, rgbValues, 0, bytes);
         }
 
+        //TODO: move to separate class
+        #region Pixel
         private static Pixel GetPixelforPosition(byte[] rgbValues, int stride, int row, int column) =>
             new Pixel(
                     r: rgbValues[row * stride + column * 3],
@@ -74,26 +76,7 @@ namespace IPIO.Core.Extensions
             rgbValues[row * stride + column * 3 + 1] = pixel.G;
             rgbValues[row * stride + column * 3 + 2] = pixel.B;
         }
-
-        private static Bitmap ToBitmap(this byte[] bytes, int width, int height, PixelFormat pixelFormat)
-        {
-            using (var stream = new MemoryStream(bytes))
-            {
-                var bmp = new Bitmap(width, height, pixelFormat);
-
-                var bmpData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
-                                           ImageLockMode.WriteOnly,
-                                           bmp.PixelFormat);
-
-                var firstLineAddress = bmpData.Scan0;
-                Marshal.Copy(bytes, 0, firstLineAddress, bytes.Length);
-
-                bmp.UnlockBits(bmpData);
-
-                return bmp;
-            }
-
-        }
+        #endregion
     }
 }
 
