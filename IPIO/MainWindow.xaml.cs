@@ -35,35 +35,28 @@ namespace IPIO
 
         private BitmapSource ToImage(byte[] array)
         {
-
             return (BitmapSource)new ImageSourceConverter().ConvertFrom(array);
-            
         }
 
         private async void Button_Click_1(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog();
-            dialog.Filter = "Image files (*.png;*.jpeg)|*.png;*.jpeg";
+            dialog.Filter = "Image files (*.png;*.jpeg;*.jpg)|*.png;*.jpeg;*.jpg";
             if (dialog.ShowDialog() == true)
             {
                 _fileName = dialog.FileName;
                 _imageBytes = await File.ReadAllBytesAsync(dialog.FileName);
                 ImageBefore.Source = ToImage(_imageBytes);
                 var bm = (Bitmap)Bitmap.FromFile(dialog.FileName);
-                //ImageAfter.Source = ToImage(
-                var (before, after)= Core.Extensions.BitmapExtensions.ForEachPixel(bm, pixel =>
-                {
-                    //return new Pixel((byte)(pixel.R / 2), (byte)(pixel.G / 2), (byte)(pixel.B / 2));
-                    return new Pixel(pixel.R, pixel.G, pixel.B);
-                });
-                //    );
+                var modifiedImageBitmap= Core.Extensions.BitmapExtensions.Select(bm, pixel => 
+                    new Pixel((byte)(pixel.R / 2), (byte)(pixel.G / 2), (byte)(pixel.B / 2))
+                );
 
-                ImageAfter.Source = BitmapToImageSource(after);
-
+                ImageAfter.Source = BitmapToImageSource(modifiedImageBitmap);
             }
         }
 
-        BitmapImage BitmapToImageSource(Bitmap bitmap)
+        private BitmapImage BitmapToImageSource(Bitmap bitmap)
         {
             using (MemoryStream memory = new MemoryStream())
             {

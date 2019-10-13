@@ -9,7 +9,7 @@ namespace IPIO.Core.Extensions
 {
     public static class BitmapExtensions
     {
-        public static (Bitmap before, Bitmap after) ForEachPixel(this Bitmap bmp, Func<Pixel, Pixel> expression)
+        public static Bitmap Select(this Bitmap bmp, Func<Pixel, Pixel> expression)
         {
             var bitmapData = LockBitmap(bmp);
 
@@ -36,37 +36,15 @@ namespace IPIO.Core.Extensions
 
             bmp.UnlockBits(bitmapData);
 
+            var bitmap = modifiedRgbValues.ToBitmap(bitmapData.Width, bitmapData.Height, bmp.PixelFormat);
 
-            var bitmap = Convert(modifiedRgbValues, bitmapData.Width, bitmapData.Height, bmp.PixelFormat);
-            return (before: bmp, after: bitmap);
+            return bitmap;
         }
-
-        private static Bitmap Convert(byte[] bytes, int width, int height, PixelFormat pixelFormat)
-        {
-            using (var stream = new MemoryStream(bytes))
-            {
-                var bmp = new Bitmap(width, height, pixelFormat);
-
-                BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0,
-                                                            bmp.Width,
-                                                            bmp.Height),
-                                                ImageLockMode.WriteOnly,
-                                                bmp.PixelFormat);
-
-                var pNative = bmpData.Scan0;
-                Marshal.Copy(bytes, 0, pNative, bytes.Length);
-
-                bmp.UnlockBits(bmpData);
-
-                return bmp;
-            }
-                
-    }
 
         private static BitmapData LockBitmap(Bitmap bmp)
         {
             var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            var bitmapData = bmp.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            var bitmapData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
             return bitmapData;
         }
 
@@ -96,10 +74,30 @@ namespace IPIO.Core.Extensions
             rgbValues[row * stride + column * 3 + 1] = pixel.G;
             rgbValues[row * stride + column * 3 + 2] = pixel.B;
         }
-            
+
+        private static Bitmap ToBitmap(this byte[] bytes, int width, int height, PixelFormat pixelFormat)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                var bmp = new Bitmap(width, height, pixelFormat);
+
+                BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0,
+                                                            bmp.Width,
+                                                            bmp.Height),
+                                                ImageLockMode.WriteOnly,
+                                                bmp.PixelFormat);
+
+                var pNative = bmpData.Scan0;
+                Marshal.Copy(bytes, 0, pNative, bytes.Length);
+
+                bmp.UnlockBits(bmpData);
+
+                return bmp;
+            }
+
+        }
 
 
-        
     }
 }
 
