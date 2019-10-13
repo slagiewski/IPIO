@@ -8,11 +8,12 @@ namespace IPIO.Core.Algorithms
     {
         public Bitmap Run(Bitmap bitmap)
         {
-            return bitmap.Select(pixel => 
+            return bitmap.Select(pixel =>
                 new Pixel(
-                    pixel.R / 2, 
-                    pixel.G / 2, 
-                    pixel.B / 2
+                    pixel.R / 2,
+                    pixel.G / 2,
+                    pixel.B / 2,
+                    pixel.Alpha.HasValue ? pixel.Alpha : default(int?)
                     )
                 );
         }

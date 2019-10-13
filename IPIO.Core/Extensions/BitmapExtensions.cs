@@ -29,8 +29,8 @@ namespace IPIO.Core.Extensions
             {
                 for (var column = 0; column < bitmapData.Width; column++)
                 {
-                    var modifiedPixel = expression(GetPixelforPosition(rgbValues, stride, row, column));
-                    SetPixelValues(modifiedRgbValues, modifiedPixel, stride, column, row);
+                    var modifiedPixel = expression(GetPixelforPosition(rgbValues, stride, row, column, bitmapData.PixelFormat));
+                    SetPixelValues(modifiedRgbValues, modifiedPixel, stride, row, column, bitmapData.PixelFormat);
                 }
             }
 
@@ -63,18 +63,43 @@ namespace IPIO.Core.Extensions
 
         //TODO: move to separate class
         #region Pixel
-        private static Pixel GetPixelforPosition(byte[] rgbValues, int stride, int row, int column) =>
-            new Pixel(
-                    r: rgbValues[row * stride + column * 3],
-                    g: rgbValues[row * stride + column * 3 + 1],
-                    b: rgbValues[row * stride + column * 3 + 2]
-                );
-        
-        private static void SetPixelValues(byte[] rgbValues, Pixel pixel, int stride, int column, int row)
+        private static Pixel GetPixelforPosition(byte[] rgbValues, int stride, int row, int column, PixelFormat pixelFormat)
         {
-            rgbValues[row * stride + column * 3] = pixel.R;
-            rgbValues[row * stride + column * 3 + 1] = pixel.G;
-            rgbValues[row * stride + column * 3 + 2] = pixel.B;
+            if (pixelFormat.IsArgb())
+            {
+                return new Pixel(
+                   r: rgbValues[row * stride + column * 4],
+                   g: rgbValues[row * stride + column * 4 + 1],
+                   b: rgbValues[row * stride + column * 4 + 2],
+                   a: rgbValues[row * stride + column * 4 + 3]
+               );
+            }
+            else
+            {
+                return new Pixel(
+                   r: rgbValues[row * stride + column * 3],
+                   g: rgbValues[row * stride + column * 3 + 1],
+                   b: rgbValues[row * stride + column * 3 + 2]
+               );
+            }
+        }
+        
+        private static void SetPixelValues(byte[] rgbValues, Pixel pixel, int stride, int row, int column, PixelFormat pixelFormat)
+        {
+            if (pixelFormat.IsArgb())
+            {
+                rgbValues[row * stride + column * 4] = pixel.R;
+                rgbValues[row * stride + column * 4 + 1] = pixel.G;
+                rgbValues[row * stride + column * 4 + 2] = pixel.B;
+                rgbValues[row * stride + column * 4 + 3] = pixel.Alpha.Value;
+            }
+            else
+            {
+                rgbValues[row * stride + column * 3] = pixel.R;
+                rgbValues[row * stride + column * 3 + 1] = pixel.G;
+                rgbValues[row * stride + column * 3 + 2] = pixel.B;
+            }
+                
         }
         #endregion
     }
