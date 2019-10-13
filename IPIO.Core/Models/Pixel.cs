@@ -13,5 +13,12 @@
             B = b;
         }
 
+        public Pixel(int r, int g, int b)
+        {
+            R = (byte)r;
+            G = (byte)g;
+            B = (byte)b;
+        }
+
     }
 }

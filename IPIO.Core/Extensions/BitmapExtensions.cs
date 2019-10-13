@@ -41,18 +41,18 @@ namespace IPIO.Core.Extensions
             return bitmap;
         }
 
-        private static BitmapData LockBitmap(Bitmap bmp)
-        {
-            var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            var bitmapData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
-            return bitmapData;
-        }
-
         private static void DeclareArraysForBitmap(Bitmap bmp, BitmapData bitmapData, out int bytes, out byte[] rgbValues, out byte[] modifiedRgbValues)
         {
             bytes = bitmapData.Stride * bmp.Height;
             rgbValues = new byte[bytes];
             modifiedRgbValues = new byte[bytes];
+        }
+
+        private static BitmapData LockBitmap(Bitmap bmp)
+        {
+            var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
+            var bitmapData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
+            return bitmapData;
         }
 
         private static void CopyRGBValuesIntoArray(BitmapData bitmapData, int bytes, byte[] rgbValues)
@@ -81,14 +81,12 @@ namespace IPIO.Core.Extensions
             {
                 var bmp = new Bitmap(width, height, pixelFormat);
 
-                BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0,
-                                                            bmp.Width,
-                                                            bmp.Height),
-                                                ImageLockMode.WriteOnly,
-                                                bmp.PixelFormat);
+                var bmpData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
+                                           ImageLockMode.WriteOnly,
+                                           bmp.PixelFormat);
 
-                var pNative = bmpData.Scan0;
-                Marshal.Copy(bytes, 0, pNative, bytes.Length);
+                var firstLineAddress = bmpData.Scan0;
+                Marshal.Copy(bytes, 0, firstLineAddress, bytes.Length);
 
                 bmp.UnlockBits(bmpData);
 
@@ -96,8 +94,6 @@ namespace IPIO.Core.Extensions
             }
 
         }
-
-
     }
 }
 
