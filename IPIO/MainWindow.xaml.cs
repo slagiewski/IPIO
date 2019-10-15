@@ -21,16 +21,36 @@ namespace IPIO
 
         private async void ChooseFileButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog();
-            dialog.Filter = IMG_FILE_FILTERS;
+            var dialog = new OpenFileDialog
+            {
+                Filter = IMG_FILE_FILTERS
+            };
+
             if (dialog.ShowDialog() == true)
             {
-                var bm = (Bitmap)Bitmap.FromFile(dialog.FileName);
+                InitProgressBar();
+
+                var bm = await Task.Run(() => (Bitmap)Bitmap.FromFile(dialog.FileName));
                 ImageBefore.Source = bm.ToImage();
 
                 var modifiedImageBitmap = await Task.Run(() => _algorithm.Run(bm));
                 ImageAfter.Source = modifiedImageBitmap.ToImage();
+               
+                HideProgressBar();
             }
+        }
+
+        private void HideProgressBar()
+        {
+            ProgressBar.Visibility = Visibility.Hidden;
+        }
+
+        private void InitProgressBar()
+        {
+            ProgressBar.Visibility = Visibility.Visible;
+            ProgressBar.Height = 30;
+            ProgressBar.Width = 200;
+            ProgressBar.IsIndeterminate = true;
         }
     }
 }
