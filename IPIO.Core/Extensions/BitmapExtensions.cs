@@ -68,18 +68,18 @@ namespace IPIO.Core.Extensions
             if (pixelFormat.IsArgb())
             {
                 return new Pixel(
-                   r: rgbValues[row * stride + column * 4],
+                   r: rgbValues[row * stride + column * 4 + 2],
                    g: rgbValues[row * stride + column * 4 + 1],
-                   b: rgbValues[row * stride + column * 4 + 2],
+                   b: rgbValues[row * stride + column * 4],
                    a: rgbValues[row * stride + column * 4 + 3]
                );
             }
             else
             {
                 return new Pixel(
-                   r: rgbValues[row * stride + column * 3],
+                   r: rgbValues[row * stride + column * 3 + 2],
                    g: rgbValues[row * stride + column * 3 + 1],
-                   b: rgbValues[row * stride + column * 3 + 2]
+                   b: rgbValues[row * stride + column * 3]
                );
             }
         }
@@ -88,16 +88,16 @@ namespace IPIO.Core.Extensions
         {
             if (pixelFormat.IsArgb())
             {
-                rgbValues[row * stride + column * 4] = pixel.R;
+                rgbValues[row * stride + column * 4] = pixel.B;
                 rgbValues[row * stride + column * 4 + 1] = pixel.G;
-                rgbValues[row * stride + column * 4 + 2] = pixel.B;
+                rgbValues[row * stride + column * 4 + 2] = pixel.R;
                 rgbValues[row * stride + column * 4 + 3] = pixel.Alpha.Value;
             }
             else
             {
-                rgbValues[row * stride + column * 3] = pixel.R;
+                rgbValues[row * stride + column * 3] = pixel.B;
                 rgbValues[row * stride + column * 3 + 1] = pixel.G;
-                rgbValues[row * stride + column * 3 + 2] = pixel.B;
+                rgbValues[row * stride + column * 3 + 2] = pixel.R;
             }
                 
         }

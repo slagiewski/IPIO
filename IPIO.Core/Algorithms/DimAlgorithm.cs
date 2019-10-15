@@ -13,7 +13,7 @@ namespace IPIO.Core.Algorithms
                     pixel.R / 2,
                     pixel.G / 2,
                     pixel.B / 2,
-                    pixel.Alpha.HasValue ? pixel.Alpha : default(int?)
+                    pixel.Alpha.HasValue ? pixel.Alpha : default
                     )
                 );
         }
