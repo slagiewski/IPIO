@@ -22,14 +22,14 @@ namespace IPIO.Core.Extensions
 
             CopyRGBValuesIntoArray(bitmapData, bytesCount, rgbValues);
 
-            var stride = bitmapData.Stride;
+            var distanceBetweenVerticalPixels = bitmapData.Stride;
 
             for (var row = 0; row < bitmapData.Height; row++)
             {
                 for (var column = 0; column < bitmapData.Width; column++)
                 {
-                    var modifiedPixel = expression(Pixel.FromByteArray(rgbValues, stride, row, column, bitmapData.PixelFormat));
-                    Pixel.SetByteArrayValue(modifiedRgbValues, modifiedPixel, stride);
+                    var modifiedPixel = expression(Pixel.FromByteArray(rgbValues, distanceBetweenVerticalPixels, row, column, bitmapData.PixelFormat));
+                    Pixel.SetByteArrayValue(modifiedRgbValues, modifiedPixel, distanceBetweenVerticalPixels);
                 }
             }
 
