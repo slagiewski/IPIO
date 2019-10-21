@@ -12,27 +12,14 @@ namespace IPIO.Core.Extensions
         {
             var bitmapData = LockBitmap(bmp);
 
-            DeclareArraysForBitmap(
-                bmp,
-                bitmapData,
-                out int bytesCount,
-                out byte[] rgbValues,
-                out byte[] modifiedRgbValues
-                );
+            var modifiedRgbValues = new byte[bitmapData.GetBytesCount()];
 
-            CopyRGBValuesIntoArray(bitmapData, bytesCount, rgbValues);
-
-            var distanceBetweenVerticalPixels = bitmapData.Stride;
-
-            for (var row = 0; row < bitmapData.Height; row++)
+            Iterate(bitmapData, pixel =>
             {
-                for (var column = 0; column < bitmapData.Width; column++)
-                {
-                    var modifiedPixel = expression(Pixel.FromByteArray(rgbValues, distanceBetweenVerticalPixels, row, column, bitmapData.PixelFormat));
-                    Pixel.SetByteArrayValue(modifiedRgbValues, modifiedPixel, distanceBetweenVerticalPixels);
-                }
-            }
-
+                var modifiedPixel = expression(pixel);
+                Pixel.SetByteArrayValue(modifiedRgbValues, modifiedPixel, bitmapData.Stride);
+            });
+            
             bmp.UnlockBits(bitmapData);
 
             var bitmap = modifiedRgbValues.ToBitmap(bitmapData.Width, bitmapData.Height, bmp.PixelFormat);
@@ -40,11 +27,35 @@ namespace IPIO.Core.Extensions
             return bitmap;
         }
 
-        private static void DeclareArraysForBitmap(Bitmap bmp, BitmapData bitmapData, out int bytes, out byte[] rgbValues, out byte[] modifiedRgbValues)
+        public static void ForEach(this Bitmap bmp, Action<Pixel> expression)
         {
-            bytes = bitmapData.Stride * bmp.Height;
-            rgbValues = new byte[bytes];
-            modifiedRgbValues = new byte[bytes];
+            var bitmapData = LockBitmap(bmp);
+
+            Iterate(bitmapData, pixel => expression(pixel));
+
+            bmp.UnlockBits(bitmapData);
+        }
+
+        private static void Iterate(BitmapData bitmapData, Action<Pixel> expression)
+        {
+            var bytesCount = bitmapData.GetBytesCount();
+            var rgbValues = new byte[bytesCount];
+
+            CopyRGBValuesIntoArray(bitmapData, bytesCount, rgbValues);
+
+            for (var row = 0; row < bitmapData.Height; row++)
+            {
+                for (var column = 0; column < bitmapData.Width; column++)
+                {
+                    expression(Pixel.FromByteArray(rgbValues, bitmapData.Stride, row, column, bitmapData.PixelFormat));
+                }
+            }
+        }
+
+        private static int GetBytesCount(this BitmapData bitmapData)
+        {
+            var distanceBetweenVerticalPixels = bitmapData.Stride;
+            return distanceBetweenVerticalPixels * bitmapData.Height;
         }
 
         private static BitmapData LockBitmap(Bitmap bmp)

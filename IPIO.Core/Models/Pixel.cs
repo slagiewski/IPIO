@@ -43,15 +43,15 @@ namespace IPIO.Core.Models
         }
 
         #region Bytes Array Helpers
-        public static Pixel FromByteArray(byte[] rgbValues, int stride, int row, int column, PixelFormat pixelFormat)
+        public static Pixel FromByteArray(byte[] rgbValues, int distanceBetweenVerticalPixels, int row, int column, PixelFormat pixelFormat)
         {
             if (pixelFormat.IsArgb())
             {
                 return new Pixel(
-                   r: rgbValues[row * stride + column * 4 + 2],
-                   g: rgbValues[row * stride + column * 4 + 1],
-                   b: rgbValues[row * stride + column * 4],
-                   a: rgbValues[row * stride + column * 4 + 3],
+                   r: rgbValues[row * distanceBetweenVerticalPixels + column * 4 + 2],
+                   g: rgbValues[row * distanceBetweenVerticalPixels + column * 4 + 1],
+                   b: rgbValues[row * distanceBetweenVerticalPixels + column * 4],
+                   a: rgbValues[row * distanceBetweenVerticalPixels + column * 4 + 3],
                    row,
                    column
                );
@@ -59,29 +59,29 @@ namespace IPIO.Core.Models
             else
             {
                 return new Pixel(
-                   r: rgbValues[row * stride + column * 3 + 2],
-                   g: rgbValues[row * stride + column * 3 + 1],
-                   b: rgbValues[row * stride + column * 3],
+                   r: rgbValues[row * distanceBetweenVerticalPixels + column * 3 + 2],
+                   g: rgbValues[row * distanceBetweenVerticalPixels + column * 3 + 1],
+                   b: rgbValues[row * distanceBetweenVerticalPixels + column * 3],
                    row,
                    column
                );
             }
         }
 
-        public static void SetByteArrayValue(byte[] rgbValues, Pixel pixel, int stride)
+        public static void SetByteArrayValue(byte[] rgbValues, Pixel pixel, int distanceBetweenVerticalPixels)
         {
             if (pixel.Alpha.HasValue)
             {
-                rgbValues[pixel.Row * stride + pixel.Column * 4] = pixel.B;
-                rgbValues[pixel.Row * stride + pixel.Column * 4 + 1] = pixel.G;
-                rgbValues[pixel.Row * stride + pixel.Column * 4 + 2] = pixel.R;
-                rgbValues[pixel.Row * stride + pixel.Column * 4 + 3] = pixel.Alpha.Value;
+                rgbValues[pixel.Row * distanceBetweenVerticalPixels + pixel.Column * 4] = pixel.B;
+                rgbValues[pixel.Row * distanceBetweenVerticalPixels + pixel.Column * 4 + 1] = pixel.G;
+                rgbValues[pixel.Row * distanceBetweenVerticalPixels + pixel.Column * 4 + 2] = pixel.R;
+                rgbValues[pixel.Row * distanceBetweenVerticalPixels + pixel.Column * 4 + 3] = pixel.Alpha.Value;
             }
             else
             {
-                rgbValues[pixel.Row * stride + pixel.Column * 3] = pixel.B;
-                rgbValues[pixel.Row * stride + pixel.Column * 3 + 1] = pixel.G;
-                rgbValues[pixel.Row * stride + pixel.Column * 3 + 2] = pixel.R;
+                rgbValues[pixel.Row * distanceBetweenVerticalPixels + pixel.Column * 3] = pixel.B;
+                rgbValues[pixel.Row * distanceBetweenVerticalPixels + pixel.Column * 3 + 1] = pixel.G;
+                rgbValues[pixel.Row * distanceBetweenVerticalPixels + pixel.Column * 3 + 2] = pixel.R;
             }
 
         }

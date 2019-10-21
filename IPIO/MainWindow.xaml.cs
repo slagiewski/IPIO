@@ -1,4 +1,5 @@
 ﻿using IPIO.Core.Algorithms;
+using IPIO.Core.Interfaces;
 using IPIO.Extensions;
 using Microsoft.Win32;
 using System.Drawing;
@@ -9,14 +10,14 @@ namespace IPIO
 {
     public partial class MainWindow : Window
     {
-        private IWatermarkingAlgorithm _algorithm;
+        private IStringEmbeddingAlgorithm _algorithm;
         private const string IMG_FILE_FILTERS = "Image files (*.png;*.jpeg;*.jpg)|*.png;*.jpeg;*.jpg";
 
         public MainWindow()
         {
             InitializeComponent();
             //create alg factory
-            _algorithm = new DimAlgorithm();
+            _algorithm = new LsbAlgorithm();
         }
 
         private async void ChooseFileButton_Click(object sender, RoutedEventArgs e)
@@ -33,9 +34,12 @@ namespace IPIO
                 var bm = await Task.Run(() => (Bitmap)Bitmap.FromFile(dialog.FileName));
                 ImageBefore.Source = bm.ToImage();
 
-                var modifiedImageBitmap = await Task.Run(() => _algorithm.Run(bm));
+                var modifiedImageBitmap = await _algorithm.EmbedAsync(bm, "Hello World");
+
                 ImageAfter.Source = modifiedImageBitmap.ToImage();
-               
+
+                var msg = await _algorithm.RetrieveAsync(modifiedImageBitmap);
+
                 HideProgressBar();
             }
         }
