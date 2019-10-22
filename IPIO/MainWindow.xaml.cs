@@ -31,8 +31,6 @@ namespace IPIO
         private void InitElementsState()
         {
             ChangePerformAction(PerformState.ENCODE);
-            //Label_EditText.Visibility = Visibility.Hidden;
-            //InputText.Visibility = Visibility.Hidden;
         }
 
         private async void ChooseFileButton_Click(object sender, RoutedEventArgs e)
@@ -50,14 +48,10 @@ namespace IPIO
                 ImageBefore.Source = bm.ToImage();
                 _loadedImage = bm;
 
-
-
                 HideProgressBar();
                 ChangeEnableStatePerformActionButton(true);
-                //ChangeEnableStateSaveButton(true);
             }
         }
-
         private void EncodeRadioButton_Click(object sender, RoutedEventArgs e)
         {
             ChangePerformAction(PerformState.ENCODE);
@@ -80,13 +74,10 @@ namespace IPIO
             }
             HideProgressBar();
         }
-
-
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             ClearWindow();
         }
-
         private async void EncodeImage()
         {
             var input = InputText.Text;
@@ -101,7 +92,6 @@ namespace IPIO
             ImageAfter.Source = modifiedImageBitmap.ToImage();
             ChangeEnableStateSaveButton(true);
         }
-
         private async void DecodeImage()
         {
             var msg = await _algorithm.RetrieveAsync(_loadedImage);
@@ -109,7 +99,6 @@ namespace IPIO
             MessageBox.Show("Decoded text in the box!", "Decoded");
             ChangeEnableStatePerformActionButton(false);
         }
-
         private async void SaveFileButton_Click(object sender, RoutedEventArgs e)
         {
             if (_modifiedImage == null) return;
@@ -145,7 +134,6 @@ namespace IPIO
                 InputText.IsEnabled = false;
             }
         }
-
         private void ChangeEnableStateSaveButton(bool enable) => SaveButton.IsEnabled = enable;
         private void ChangeEnableStatePerformActionButton(bool enable) => PerformActionButton.IsEnabled = enable;
         private void HideProgressBar() => ProgressBar.Visibility = Visibility.Hidden;
@@ -157,7 +145,6 @@ namespace IPIO
             ProgressBar.Width = 200;
             ProgressBar.IsIndeterminate = true;
         }
-
 
         private void ClearWindow()
         {
