@@ -5,13 +5,36 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:IPIO"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="600">
+        Title="MainWindow" Height="800" Width="1200">
     <StackPanel>
-        <Button Content="Choose file..." HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Click="ChooseFileButton_Click"/>
-        <ProgressBar Margin="0,30,0,10" Minimum="0" Maximum="100" x:Name="ProgressBar"/>
-        <Image x:Name="ImageBefore" Height="225" Width="290"/>
-        <Image x:Name="ImageAfter"  Height="225" Width="290"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Width="100" Height="50" FontSize="30"  Content="Clear" Background="Pink" HorizontalAlignment="Center" Margin="0,10,20,0" VerticalAlignment="Top" Click="ClearButton_Click"/>
+            <Button Width="250" Height="50" FontSize="30" Content="Choose file..." HorizontalAlignment="Center" Margin="0,10,20,0" VerticalAlignment="Top" Click="ChooseFileButton_Click"/>
+            <Button x:Name="PerformActionButton" IsEnabled="False" Width="250" Background="Aquamarine" Height="50" FontSize="30" Content="Perform Action" HorizontalAlignment="Center" Margin="0,10,20,0" VerticalAlignment="Top" Click="PerformActionButton_Click"/>
+            <Button x:Name="SaveButton" IsEnabled="False" Width="250" Height="50" Background="LightGreen" FontSize="30" Content="Save" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Click="SaveFileButton_Click"/>
+            <ComboBox x:Name="AlhorithmChooser" Width="200" Margin="20,10,0,0" SelectedIndex="0" VerticalAlignment="Center">
+                <ComboBoxItem>
+                    <TextBlock FontSize="25" HorizontalAlignment="Center">
+                        LSB
+                    </TextBlock>
+                </ComboBoxItem>
+       
+            </ComboBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+            <StackPanel Orientation="Horizontal" Width="400" Margin="0,0,50,0">
+                <RadioButton x:Name="EncodeRadioButton" GroupName="EnDeCode" FontSize="25" Margin="0,0,20,0" Click="EncodeRadioButton_Click">Encode</RadioButton>
+                <RadioButton x:Name="DecodeRadioButton" GroupName="EnDeCode" FontSize="25" Click="DecodeRadioButton_Click">Decode</RadioButton>
+            </StackPanel>
+            <TextBlock x:Name="Label_EditText" Text="Encode  text:" FontSize="25" Margin="0,0,20,0"></TextBlock>
+            <TextBox x:Name="InputText" Width="300" VerticalAlignment="Center" TextAlignment="Center" FontSize="20"></TextBox>
+        </StackPanel>
+        <ProgressBar Margin="0,15,0,10" Minimum="0" Maximum="100" x:Name="ProgressBar"/>
+        <StackPanel Orientation="Horizontal">
+            <Image x:Name="ImageBefore" Margin="20,0,0,0" Height="540" Width="550"/>
+            <Image x:Name="ImageAfter" Margin="50,0,30,0" Height="540" Width="550"/>
+        </StackPanel>
+        <ListBox Height="100"/>
+        <ListBox Height="100"/>
     </StackPanel>
-
-
 </Window>
