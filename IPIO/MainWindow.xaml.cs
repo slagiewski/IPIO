@@ -2,6 +2,7 @@
 using IPIO.Core.Interfaces;
 using IPIO.Extensions;
 using Microsoft.Win32;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading.Tasks;
@@ -42,13 +43,13 @@ namespace IPIO
 
             if (dialog.ShowDialog() == true)
             {
-                InitProgressBar();
+                await PerformWithProgressBar(async () =>
+                {
+                    var bm = await Task.Run(() => (Bitmap)Bitmap.FromFile(dialog.FileName));
+                    ImageBefore.Source = bm.ToImage();
+                    _loadedImage = bm;
+                });
 
-                var bm = await Task.Run(() => (Bitmap)Bitmap.FromFile(dialog.FileName));
-                ImageBefore.Source = bm.ToImage();
-                _loadedImage = bm;
-
-                HideProgressBar();
                 ChangeEnableStatePerformActionButton(true);
             }
         }
@@ -67,13 +68,14 @@ namespace IPIO
 
         private async void PerformActionButton_Click(object sender, RoutedEventArgs e)
         {
-            InitProgressBar();
-            switch (_performAction)
+            await PerformWithProgressBar(async () =>
             {
-                case PerformState.ENCODE: await EncodeImage(); break;
-                case PerformState.DECODE: await DecodeImage(); break;
-            }
-            HideProgressBar();
+                switch (_performAction)
+                {
+                    case PerformState.ENCODE: await EncodeImage(); break;
+                    case PerformState.DECODE: await DecodeImage(); break;
+                }
+            });
         }
 
         private void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -145,6 +147,13 @@ namespace IPIO
 
         private void ChangeEnableStatePerformActionButton(bool enable) => PerformActionButton.IsEnabled = enable;
 
+        private async Task PerformWithProgressBar(Func<Task> action)
+        {
+            InitProgressBar();
+            await action();
+            HideProgressBar();
+        }
+
         private void HideProgressBar() => ProgressBar.Visibility = Visibility.Hidden;
 
         private void InitProgressBar()
@@ -165,6 +174,7 @@ namespace IPIO
             ChangeEnableStatePerformActionButton(false);
             InputText.Text = "";
         }
+
     }
 }
 enum PerformState
