@@ -52,6 +52,7 @@ namespace IPIO
                 ChangeEnableStatePerformActionButton(true);
             }
         }
+
         private void EncodeRadioButton_Click(object sender, RoutedEventArgs e)
         {
             ChangePerformAction(PerformState.ENCODE);
@@ -64,21 +65,23 @@ namespace IPIO
             Label_EditText.Text = "Decoded text:";
         }
 
-        private void PerformActionButton_Click(object sender, RoutedEventArgs e)
+        private async void PerformActionButton_Click(object sender, RoutedEventArgs e)
         {
             InitProgressBar();
             switch (_performAction)
             {
-                case PerformState.ENCODE: EncodeImage(); break;
-                case PerformState.DECODE: DecodeImage(); break;
+                case PerformState.ENCODE: await EncodeImage(); break;
+                case PerformState.DECODE: await DecodeImage(); break;
             }
             HideProgressBar();
         }
+
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             ClearWindow();
         }
-        private async void EncodeImage()
+
+        private async Task EncodeImage()
         {
             var input = InputText.Text;
             if (string.IsNullOrEmpty(input))
@@ -92,13 +95,15 @@ namespace IPIO
             ImageAfter.Source = modifiedImageBitmap.ToImage();
             ChangeEnableStateSaveButton(true);
         }
-        private async void DecodeImage()
+
+        private async Task DecodeImage()
         {
             var msg = await _algorithm.RetrieveAsync(_loadedImage);
             InputText.Text = msg;
-            MessageBox.Show("Decoded text in the box!", "Decoded");
+            MessageBox.Show("Decoded text is in the box!", "Decoded");
             ChangeEnableStatePerformActionButton(false);
         }
+
         private async void SaveFileButton_Click(object sender, RoutedEventArgs e)
         {
             if (_modifiedImage == null) return;
@@ -114,6 +119,7 @@ namespace IPIO
             }
 
         }
+
         private void ChangePerformAction(PerformState newState)
         {
             _performAction = newState;
@@ -134,8 +140,11 @@ namespace IPIO
                 InputText.IsEnabled = false;
             }
         }
+
         private void ChangeEnableStateSaveButton(bool enable) => SaveButton.IsEnabled = enable;
+
         private void ChangeEnableStatePerformActionButton(bool enable) => PerformActionButton.IsEnabled = enable;
+
         private void HideProgressBar() => ProgressBar.Visibility = Visibility.Hidden;
 
         private void InitProgressBar()
