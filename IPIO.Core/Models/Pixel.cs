@@ -1,4 +1,5 @@
 ﻿using IPIO.Core.Extensions;
+using System;
 using System.Drawing.Imaging;
 
 namespace IPIO.Core.Models
@@ -40,6 +41,11 @@ namespace IPIO.Core.Models
             Alpha = (byte?)a;
             Row = row;
             Column = column;
+        }
+
+        internal void TransformDTC()
+        {
+            throw new NotImplementedException();
         }
 
         #region Bytes Array Helpers
