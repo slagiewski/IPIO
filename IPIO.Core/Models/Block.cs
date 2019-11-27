@@ -4,7 +4,7 @@ namespace IPIO.Core.Models
 {
     public class Block
     {
-        public Block(IEnumerable<Pixel> pixels, int blockWidth, int blockHeight, int column, int row)
+        public Block(List<Pixel> pixels, int blockWidth, int blockHeight, int column, int row)
         {
             Pixels = pixels;
             BlockWidth = blockWidth;
@@ -13,7 +13,7 @@ namespace IPIO.Core.Models
             Row = row;
         }
 
-        public IEnumerable<Pixel> Pixels { get; }
+        public List<Pixel> Pixels { get; }
         public int BlockWidth { get; }
         public int BlockHeight { get; }
         public int Column { get; set; }

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace IPIO.Core.Models
+﻿namespace IPIO.Core.Models
 {
-    class DTC
+    internal class Dct
     {
-        public Pixel pixel { get; set; }
-        public int coefficient { get; set; }
+        public Pixel Pixel { get; set; }
+        public int Coefficient { get; set; }
     }
 }

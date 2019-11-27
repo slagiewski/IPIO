@@ -26,7 +26,7 @@ namespace IPIO
             InitElementsState();
             WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
             //create alg factory
-            _algorithm = new DCTAlgorithm();
+            _algorithm = new DctAlgorithm();
         }
 
         private void InitElementsState()

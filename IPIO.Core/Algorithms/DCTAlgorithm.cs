@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace IPIO.Core.Algorithms
 {
-    public class DCTAlgorithm : IStringEmbeddingAlgorithm
+    public class DctAlgorithm : IStringEmbeddingAlgorithm
     {
         int _widht = 0;
         int _height = 0;
@@ -40,10 +40,10 @@ namespace IPIO.Core.Algorithms
                         //block and applying transformation, 
                         //embeding char and undoing transformation.
 
-                        var dtc = TransformDTC(pixel);
-                        var modified = GetByteWithModifiedLsb(dtc.coefficient, GetLsb(charValue));
-                        dtc.coefficient = modified;
-                        var redoDtc = TransformBackFromDTC(dtc);
+                        var dct = TransformDCT(pixel);
+                        var modified = GetByteWithModifiedLsb(dct.Coefficient, GetLsb(charValue));
+                        dct.Coefficient = modified;
+                        var redoDct = TransformBackFromDCT(dct);
                         charBinaryIndex++;
                         if (IsFinalBitOfWord(charBinaryIndex))
                         {
@@ -54,7 +54,7 @@ namespace IPIO.Core.Algorithms
                             }
                         }
 
-                        return redoDtc;
+                        return redoDct;
                     }
                     else
                     {
@@ -65,24 +65,25 @@ namespace IPIO.Core.Algorithms
         }
 
         private bool IsMostRightBottomCornerOfBlock(Pixel pixel) => pixel.Column % 8 == 0 && pixel.Row % 8 == 0;
-        private DTC TransformDTC(Pixel pixel)
+
+        private Dct TransformDCT(Pixel pixel)
         {
             // Just dont care about the sum -> Simply taking formula and applying on one pixel
-            var calculateDTC =
+            var calculateDCT =
                 (int)(Math.Cos((Math.PI * (2 * pixel.Column + 1) * pixel.Column) / (2 * _height)) *
                 Math.Cos((Math.PI * (2 * pixel.Row + 1) * pixel.Row) / (2 * _widht)));
 
-            return new DTC
+            return new Dct
             {
-                pixel = pixel,
-                coefficient = calculateDTC
+                Pixel = pixel,
+                Coefficient = calculateDCT
             };
         }
 
-        private Pixel TransformBackFromDTC(DTC dtc)
+        private Pixel TransformBackFromDCT(Dct dct)
         {
             // I don't know how to transform back this ??
-            return dtc.pixel;
+            return dct.Pixel;
         }
 
         public async Task<string> RetrieveAsync(Bitmap bitmap)
@@ -105,8 +106,8 @@ namespace IPIO.Core.Algorithms
 
                     if (IsMostRightBottomCornerOfBlock(pixel))
                     {
-                        var dct = TransformDTC(pixel);
-                        var charBit = GetLsb(dct.coefficient);
+                        var dct = TransformDCT(pixel);
+                        var charBit = GetLsb(dct.Coefficient);
                         charValue += charBit * (int)Math.Pow(2, charBinaryIndex++);
                         if (IsMessageEndChar())
                         {
