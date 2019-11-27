@@ -4,7 +4,7 @@ namespace IPIO.Core.Models
 {
     public class Blocks
     {
-        public Blocks(IEnumerable<Block> blocks, int bitmapWidth, int bitmapHeight, int blockWidth, int blockHeight)
+        public Blocks(List<Block> blocks, int bitmapWidth, int bitmapHeight, int blockWidth, int blockHeight)
         {
             Content = blocks;
             OriginalWidthInPixels = bitmapWidth;
@@ -13,7 +13,7 @@ namespace IPIO.Core.Models
             BlockHeight = blockHeight;
         }
 
-        public IEnumerable<Block> Content { get; set; }
+        public List<Block> Content { get; set; }
 
         public int OriginalWidthInPixels { get; set; }
 

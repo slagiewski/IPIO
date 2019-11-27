@@ -87,7 +87,7 @@ namespace IPIO.Core.Extensions
             return pixels.ToArray();
         }
 
-        private static void CopyBlockIntoPixelList(Block block, int bitmapWidth, List<Pixel> pixels)
+        public static void CopyBlockIntoPixelsArray(Block block, int bitmapWidth, Pixel[] pixels)
         {
             var colOffset = block.Column * block.BlockWidth;
             var rowOffset = block.Row * bitmapWidth;
@@ -106,7 +106,7 @@ namespace IPIO.Core.Extensions
             }          
         }
 
-        private static void Iterate(BitmapData bitmapData, Action<Pixel> expression)
+        public static void Iterate(BitmapData bitmapData, Action<Pixel> expression)
         {
             var bytesCount = bitmapData.GetBytesCount();
             var rgbValues = new byte[bytesCount];
