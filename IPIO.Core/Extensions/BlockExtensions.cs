@@ -2,47 +2,90 @@
 using IPIO.Core.Utils;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Imaging;
 using System.Linq;
-using System.Text;
 
 namespace IPIO.Core.Extensions
 {
     public static class BlockExtensions
     {
-        /// <summary>
-        /// Wzory brane z artykułu : https://www.researchgate.net/publication/317401791_Secure_Image_Steganography_Algorithm_Based_on_DCT_with_OTP_Encryption?fbclid=IwAR2MBg3TnKRYtkQ3w9gkbx0gjBlViiAn6sfjXe9VJ2p5etlYzsh3Ca_p3h4
-        /// Miały najbardziej do mnie przekonywujące te wzory.
-        /// 
-        /// Ogólnie na początku wyliczane są te współczynniki ap i aq
-        /// Potem pixel po pixelu lecimy od lewej do prawej i potem coraz bardziej w dół
-        /// W każdym następnym pixelu sumą zastępuję wartość [Pixel.B]
-        /// Na sam koniec podmieniam ostatni bit współczynnika z bitem znaku
-        /// Podmieniam ostatni pixel na ten z zakodowanym [Pixel.B] 
-        ///
-        /// Potem algorytmem inverse jadę od nowa i koduję zgodnie ze wzorem wartośc z powrotem
-        /// Na koniec zwracam [Block] z podmienioną listą pixeli na te po wszystkich wzorach
-        /// </summary>
-        /// <param name="block">Świeży block z pixelami</param>
-        /// <param name="newLsb">Wartość znaku, którą trzeba zakodować w tym bloku</param>
-        /// <returns></returns>
+        public static Blocks IntoBlocks(this BitmapData bitmapData, int blockWidth = 8, int blockHeight = 8)
+        {
+            var pixels = bitmapData.ToPixels();
+
+            var numberOfColumns = bitmapData.Width / blockWidth;
+            var numberOfRows = bitmapData.Height / blockHeight;
+
+            var blocks = new List<Block>(numberOfColumns * numberOfRows);
+
+            for (var row = 0; row < numberOfRows; row++)
+            {
+                for (var col = 0; col < numberOfColumns; col++)
+                {
+                    blocks.Add(
+                            GetBlock(blockWidth, blockHeight, bitmapData.Width, pixels, col, row)
+                            );
+                }
+            }
+
+            return new Blocks(blocks, bitmapData.Width, bitmapData.Height, blockWidth, blockHeight);
+        }
+
+        public static Block GetBlock(int blockWidth, int blockHeight, int bitmapWidth, Pixel[] pixels, int col, int row)
+        {
+            var pixelsInBlock = new List<Pixel>(blockWidth * blockHeight);
+
+            var colOffset = col * blockWidth;
+            var rowOffset = row * blockHeight * bitmapWidth;
+
+            for (var blockRow = 0; blockRow < blockHeight; blockRow++)
+            {
+                for (var blockCol = 0; blockCol < blockWidth; blockCol++)
+                {
+                    pixelsInBlock.Add(pixels[colOffset + blockCol +
+                                             rowOffset + (blockRow * bitmapWidth)]);
+                }
+            }
+
+            return new Block(pixelsInBlock, blockWidth, blockHeight, col, row);
+        }
+
+        public static void CopyBlockIntoPixelsArray(Block block, int bitmapWidth, Pixel[] pixels)
+        {
+            var colOffset = block.Column * block.BlockWidth;
+            var rowOffset = block.Row * block.BlockHeight * bitmapWidth;
+
+            for (var rowInsideBlock = 0; rowInsideBlock < block.BlockWidth; rowInsideBlock++)
+            {
+                for (var colInsideBlock = 0; colInsideBlock < block.BlockHeight; colInsideBlock++)
+                {
+                    var newListIndex = colOffset + colInsideBlock +
+                                       rowOffset + (rowInsideBlock * bitmapWidth);
+
+                    var valueFromBlock = block.Pixels[colInsideBlock + rowInsideBlock * block.BlockWidth];
+
+                    pixels[newListIndex] = valueFromBlock;
+                }
+            }
+        }
+
         public static Block EmbedChar(this Block block, int newLsb)
         {
-            var blueDct = block.ToDct();
-
+            var blueDct = block.GetDctOfBlueColor();
             blueDct[^1] = newLsb;
 
-            var newBlock = blueDct.FromDct(block.BlockWidth, block.BlockHeight);
+            var newBlockOfBlueColor = blueDct.FromBlueDctToBlock(block.BlockWidth, block.BlockHeight);
 
             for (int i = 0; i < block.Pixels.Count; i++)
             {
                 var oldPixel = block.Pixels[i];
-                block.Pixels[i] = new Pixel(oldPixel.R, oldPixel.G, (byte)newBlock[i], oldPixel.Row, oldPixel.Column);
+                block.Pixels[i] = new Pixel((byte)newBlockOfBlueColor[i], oldPixel.G, oldPixel.B, oldPixel.Row, oldPixel.Column);
             }
 
             return block;
         }
 
-        private static double[] ToDct(this Block block)
+        private static double[] GetDctOfBlueColor(this Block block)
         {
             var dct = new double[block.BlockWidth * block.BlockHeight];
 
@@ -58,7 +101,7 @@ namespace IPIO.Core.Extensions
                     {
                         for (var l = 0; l < block.BlockHeight; l++)
                         {
-                            sum += block.Pixels[l + k * block.BlockWidth].B *
+                            sum += block.Pixels[l + k * block.BlockWidth].R *
                                    Math.Cos((Math.PI * (2 * l + 1) * q) / (2 * block.BlockWidth)) *
                                    Math.Cos((Math.PI * (2 * k + 1) * p) / (2 * block.BlockHeight));
 
@@ -72,7 +115,7 @@ namespace IPIO.Core.Extensions
             return dct;
         }
 
-        private static int[] FromDct(this double[] dctBLock, int blockWidth, int blockHeight)
+        private static int[] FromBlueDctToBlock(this double[] dctBLock, int blockWidth, int blockHeight)
         {
             var blueOfPixels = new int[dctBLock.Length];
 
@@ -102,22 +145,9 @@ namespace IPIO.Core.Extensions
             return blueOfPixels;
         }
 
-        /// <summary>
-        /// Zwraca ostatni bit z wartości Blue Pixela.
-        /// Robiłem to na modłe taką, żeby z każdego bloku można było wyciągnąć jak w LSB
-        /// Np. w ten sposób :
-        /// 
-        /// [LsbAlgorithm.cs]
-        /// 105. var charBit = GetLsb(pixel.R);
-        /// 106. charValue += charBit* (int) Math.Pow(2, charBinaryIndex++);
-        /// 
-        /// 
-        /// </summary>
-        /// <param name="block">Block z zakodowaną informacją</param>
-        /// <returns>Bit zakodowanego znaku ASCII</returns>
         public static int GetCharBit(this Block block)
         {
-            var blueDct = block.ToDct();
+            var blueDct = block.GetDctOfBlueColor();
 
             var newLsb = blueDct[^1];
 

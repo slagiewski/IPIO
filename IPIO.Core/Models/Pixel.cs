@@ -92,5 +92,12 @@ namespace IPIO.Core.Models
 
         }
         #endregion
+
+        public override bool Equals(object obj)
+        {
+            return obj is Pixel other 
+                ? other.R == R && other.G == G && other.B == B && other.Alpha == Alpha
+                : base.Equals(obj);
+        }
     }
 }

@@ -12,14 +12,8 @@ namespace IPIO.Core.Algorithms
 {
     public class DctAlgorithm : IStringEmbeddingAlgorithm
     {
-        int _widht = 0;
-        int _height = 0;
-
         public async Task<Bitmap> EmbedAsync(Bitmap bmp, string message)
         {
-            _widht = bmp.Width;
-            _height = bmp.Height;
-
             return await Task.Run(() =>
             {
 
@@ -42,13 +36,14 @@ namespace IPIO.Core.Algorithms
                 {
                     if (MessageAlreadyEmbedded())
                     {
+                        BlockExtensions.CopyBlockIntoPixelsArray(block, bmp.Width, newPixels);
                         return;
                     }
 
                     block.EmbedChar(GetLsb(charValue));
                     charValue = ExposeNextBit(charValue);
 
-                    BitmapExtensions.CopyBlockIntoPixelsArray(block, bmp.Width, newPixels);
+                    BlockExtensions.CopyBlockIntoPixelsArray(block, bmp.Width, newPixels);
 
                     charBinaryIndex++;
 
@@ -62,10 +57,7 @@ namespace IPIO.Core.Algorithms
                     }                    
                 });
 
-                foreach (var pixel in newPixels)
-                {
-                    Pixel.SetByteArrayValue(modifiedRgbValues, pixel, bitmapData.Stride);
-                }
+                newPixels.CopyToByteArray(modifiedRgbValues, bitmapData.Stride);
 
                 bmp.UnlockBits(bitmapData);
 
@@ -121,17 +113,6 @@ namespace IPIO.Core.Algorithms
         private static int GetLsb(int value) => value % 2;
         private static bool IsFinalBitOfWord(int charBinaryIndex) => charBinaryIndex == 8;
         private static int ExposeNextBit(int value) => value / 2;
-        private static int GetByteWithModifiedLsb(int value, int newLsb)
-        {
-            if (newLsb == 1)
-            {
-                return value | newLsb;
-            }
-            else
-            {
-                return value & ~1;
-            }
-        }
 
         private static int GetBytesCount(BitmapData bitmapData)
         {
