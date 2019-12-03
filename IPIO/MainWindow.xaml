@@ -12,13 +12,23 @@
             <Button Width="250" Height="50" FontSize="30" Content="Choose file..." HorizontalAlignment="Center" Margin="0,10,20,0" VerticalAlignment="Top" Click="ChooseFileButton_Click"/>
             <Button x:Name="PerformActionButton" IsEnabled="False" Width="250" Background="Aquamarine" Height="50" FontSize="30" Content="Perform Action" HorizontalAlignment="Center" Margin="0,10,20,0" VerticalAlignment="Top" Click="PerformActionButton_Click"/>
             <Button x:Name="SaveButton" IsEnabled="False" Width="250" Height="50" Background="LightGreen" FontSize="30" Content="Save" HorizontalAlignment="Center" Margin="0,10,0,0" VerticalAlignment="Top" Click="SaveFileButton_Click"/>
-            <ComboBox x:Name="AlhorithmChooser" Width="200" Margin="20,10,0,0" SelectedIndex="0" VerticalAlignment="Center">
+            <ComboBox x:Name="AlhorithmChooser" Width="200" Margin="20,10,0,0" SelectedIndex="0" VerticalAlignment="Center" SelectionChanged="ComboBox_SelectionChanged" DropDownClosed="ComboBox_DropDownClosed">
                 <ComboBoxItem>
                     <TextBlock FontSize="25" HorizontalAlignment="Center">
                         LSB
                     </TextBlock>
                 </ComboBoxItem>
-       
+                <ComboBoxItem>
+                    <TextBlock FontSize="25" HorizontalAlignment="Center">
+                        DCT
+                    </TextBlock>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <TextBlock FontSize="25" HorizontalAlignment="Center">
+                        HaarWavelet
+                    </TextBlock>
+                </ComboBoxItem>
+
             </ComboBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
