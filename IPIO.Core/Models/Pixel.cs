@@ -43,11 +43,6 @@ namespace IPIO.Core.Models
             Column = column;
         }
 
-        internal void TransformDTC()
-        {
-            throw new NotImplementedException();
-        }
-
         #region Bytes Array Helpers
         public static Pixel FromByteArray(byte[] rgbValues, int distanceBetweenVerticalPixels, int row, int column, PixelFormat pixelFormat)
         {
@@ -99,5 +94,8 @@ namespace IPIO.Core.Models
                 ? other.R == R && other.G == G && other.B == B && other.Alpha == Alpha
                 : base.Equals(obj);
         }
+
+        public bool IsEmpty =>
+            R == default && G == default && B == default && Alpha == default && Row == default && Column == default;
     }
 }

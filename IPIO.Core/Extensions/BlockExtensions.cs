@@ -55,9 +55,9 @@ namespace IPIO.Core.Extensions
             var colOffset = block.Column * block.BlockWidth;
             var rowOffset = block.Row * block.BlockHeight * bitmapWidth;
 
-            for (var rowInsideBlock = 0; rowInsideBlock < block.BlockWidth; rowInsideBlock++)
+            for (var rowInsideBlock = 0; rowInsideBlock < block.BlockHeight; rowInsideBlock++)
             {
-                for (var colInsideBlock = 0; colInsideBlock < block.BlockHeight; colInsideBlock++)
+                for (var colInsideBlock = 0; colInsideBlock < block.BlockWidth; colInsideBlock++)
                 {
                     var newListIndex = colOffset + colInsideBlock +
                                        rowOffset + (rowInsideBlock * bitmapWidth);
@@ -69,89 +69,98 @@ namespace IPIO.Core.Extensions
             }
         }
 
-        public static Block EmbedChar(this Block block, int newLsb)
+        public static Block EmbedChar(this Block block, byte newValue)
         {
             var blueDct = block.GetDctOfBlueColor();
-            blueDct[^1] = newLsb;
+            blueDct[0] = GetTransformedValue(blueDct[1], newValue);
 
             var newBlockOfBlueColor = blueDct.FromBlueDctToBlock(block.BlockWidth, block.BlockHeight);
 
             for (int i = 0; i < block.Pixels.Count; i++)
             {
                 var oldPixel = block.Pixels[i];
-                block.Pixels[i] = new Pixel((byte)newBlockOfBlueColor[i], oldPixel.G, oldPixel.B, oldPixel.Row, oldPixel.Column);
+                block.Pixels[i] = new Pixel(oldPixel.R, oldPixel.G, (byte)newBlockOfBlueColor[i], oldPixel.Row, oldPixel.Column);
             }
 
             return block;
+        }
+
+        public static int GetChar(this Block transformedBlock, Block originalBlock)
+        {
+            var transformedBlockDct = transformedBlock.GetDctOfBlueColor();
+            var originalBlockDct = originalBlock.GetDctOfBlueColor();
+
+            var transformedValue = transformedBlockDct[0];
+            var originalValue = originalBlockDct[0];
+
+            return (int)Math.Round(RetrieveTransformedValue(transformedValue, originalValue));
         }
 
         private static double[] GetDctOfBlueColor(this Block block)
         {
             var dct = new double[block.BlockWidth * block.BlockHeight];
 
-            for (int p = 0; p < block.BlockWidth; p++)
+            for (int p = 0; p < block.BlockHeight; p++)
             {
-                for (int q = 0; q < block.BlockHeight; q++)
+                for (int q = 0; q < block.BlockWidth; q++)
                 {
                     var ap = DCTTools.CalculateAP(p, block.BlockWidth);
                     var aq = DCTTools.CalculateAQ(q, block.BlockHeight);
 
                     var sum = 0.0;
-                    for (var k = 0; k < block.BlockWidth; k++)
+                    for (var k = 0; k < block.BlockHeight; k++)
                     {
-                        for (var l = 0; l < block.BlockHeight; l++)
+                        for (var l = 0; l < block.BlockWidth; l++)
                         {
-                            sum += block.Pixels[l + k * block.BlockWidth].R *
+                            sum += block.Pixels[l + k * block.BlockWidth].B *
                                    Math.Cos((Math.PI * (2 * l + 1) * q) / (2 * block.BlockWidth)) *
                                    Math.Cos((Math.PI * (2 * k + 1) * p) / (2 * block.BlockHeight));
-
                         }
                     }
 
-                    dct[p * block.BlockWidth + q] = ap * aq * sum;
+                    dct[q + block.BlockWidth * p] = ap * aq * sum;
                 }
             }
 
             return dct;
         }
 
-        private static int[] FromBlueDctToBlock(this double[] dctBLock, int blockWidth, int blockHeight)
+        private static double[] FromBlueDctToBlock(this double[] dctBLock, int blockWidth, int blockHeight)
         {
-            var blueOfPixels = new int[dctBLock.Length];
+            var blueOfPixels = new double[dctBLock.Length];
 
-            for (int p = 0; p < blockWidth; p++)
+            for (int p = 0; p < blockHeight; p++)
             {
-                for (int q = 0; q < blockHeight; q++)
+                for (int q = 0; q < blockWidth; q++)
                 {
-                    var ap = DCTTools.CalculateAP(p, blockWidth);
-                    var aq = DCTTools.CalculateAQ(q, blockHeight);
-
                     var blueOfPixel = 0.0;
                     for (var k = 0; k < blockWidth; k++)
                     {
                         for (var l = 0; l < blockHeight; l++)
                         {
-                            blueOfPixel += ap * aq * dctBLock[p * blockWidth + q] * 
-                                   Math.Cos((Math.PI * (2 * l + 1) * q) / (2 * blockWidth)) *
-                                   Math.Cos((Math.PI * (2 * k + 1) * p) / (2 * blockHeight));
+                            var ak = DCTTools.CalculateAP(k, blockWidth);
+                            var al = DCTTools.CalculateAQ(l, blockHeight);
+
+                            blueOfPixel += ak * al * dctBLock[l + blockWidth * k] * 
+                                   Math.Cos(((Math.PI * (2d * p + 1d) * k)) / (2 * blockWidth)) *
+                                   Math.Cos(((Math.PI * (2d * q + 1d) * l)) / (2 * blockHeight));
 
                         }
                     }
 
-                    blueOfPixels[p * blockWidth + q] = (int)blueOfPixel;
+                    blueOfPixels[p * blockWidth + q] = blueOfPixel;
                 }
             }
 
             return blueOfPixels;
         }
 
-        public static int GetCharBit(this Block block)
+        private static double GetTransformedValue(double originalValue, double watermarkValue) =>
+            originalValue + 0.1 * watermarkValue;
+
+        private static double RetrieveTransformedValue(double encodedValue, double originalValue)
         {
-            var blueDct = block.GetDctOfBlueColor();
-
-            var newLsb = blueDct[^1];
-
-            return (int)Math.Round(newLsb);
+            return (encodedValue - originalValue) / 0.1;
         }
     }
 }

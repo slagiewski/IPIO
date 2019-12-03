@@ -58,9 +58,15 @@ namespace IPIO.Core.Extensions
         {
             var pixels = new List<Pixel>(bitmapData.Width * bitmapData.Height);
 
-            Iterate(bitmapData, pixel => pixels.Add(pixel));
+            Iterate(
+                bitmapData, 
+                pixel =>
+                {
+                    pixels.Add(pixel);
+                });
 
             return pixels
+                .Where(p => !p.IsEmpty)
                 .OrderBy(p => p.Row)
                 .ThenBy(p => p.Column)
                 .ToArray();

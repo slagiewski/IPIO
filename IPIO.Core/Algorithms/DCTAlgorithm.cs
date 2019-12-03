@@ -4,7 +4,6 @@ using IPIO.Core.Models;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,9 +13,8 @@ namespace IPIO.Core.Algorithms
     {
         public async Task<Bitmap> EmbedAsync(Bitmap bmp, string message)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
-
                 var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
                 var bitmapData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
 
@@ -40,21 +38,18 @@ namespace IPIO.Core.Algorithms
                         return;
                     }
 
-                    block.EmbedChar(GetLsb(charValue));
-                    charValue = ExposeNextBit(charValue);
+                    block.EmbedChar((byte)charValue);
 
                     BlockExtensions.CopyBlockIntoPixelsArray(block, bmp.Width, newPixels);
 
-                    charBinaryIndex++;
+                    charIndex++;
+                    charBinaryIndex = 0;
 
-                    if (IsFinalBitOfWord(charBinaryIndex))
+                    if (!MessageAlreadyEmbedded())
                     {
-                        charIndex++;
-                        if (!MessageAlreadyEmbedded())
-                        {
-                            charValue = messageWithEndChar[charIndex];
-                        }
-                    }                    
+                        charValue = messageWithEndChar[charIndex];
+                    }
+                                        
                 });
 
                 newPixels.CopyToByteArray(modifiedRgbValues, bitmapData.Stride);
@@ -63,18 +58,31 @@ namespace IPIO.Core.Algorithms
 
                 var bitmap = modifiedRgbValues.ToBitmap(bitmapData.Width, bitmapData.Height, bmp.PixelFormat);
 
+                var msgFromModifiedImage = await RetrieveAsync(bitmap, bmp);
+
+                if (msgFromModifiedImage != message)
+                {
+                    throw new Exception("Message was not embedded successfully!");
+                }
+
                 return bitmap;               
             });
         }
 
         public async Task<string> RetrieveAsync(Bitmap bmp)
         {
+            throw new NotImplementedException();
+        }
+
+        public async Task<string> RetrieveAsync(Bitmap bmp, Bitmap originalBitmap)
+        {
             return await Task.Run(() =>
             {
-                var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-                var bitmapData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
+                var watermarkedBitmapData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, bmp.PixelFormat);
+                var originalBitmapData = originalBitmap.LockBits(new Rectangle(0, 0, originalBitmap.Width, originalBitmap.Height), ImageLockMode.ReadWrite, originalBitmap.PixelFormat);
 
-                var blocks = bitmapData.IntoBlocks();
+                var watermarkedBlocks = watermarkedBitmapData.IntoBlocks();
+                var originalBlocks = originalBitmapData.IntoBlocks();
 
                 var charBinaryIndex = 0;
                 var charValue = 0;
@@ -83,27 +91,26 @@ namespace IPIO.Core.Algorithms
 
                 bool IsMessageEndChar() => charValue == 0;
 
-                blocks.Content.ForEach(block =>
+                var index = -1;
+                watermarkedBlocks.Content.ForEach(block =>
                 {
+                    index++;
+
                     if (messageRead)
                     {
                         return;
                     }
 
-                    var charBit = block.GetCharBit();
-                    charValue += charBit * (int)Math.Pow(2, charBinaryIndex++);
+                    charValue = block.GetChar(originalBlocks.Content[index]);
+                   
                     if (IsMessageEndChar())
                     {
                         messageRead = true;
                         return;
                     }
 
-                    if (IsFinalBitOfWord(charBinaryIndex))
-                    {
-                        charBinaryIndex = 0;
-                        charValue = 0;
-                    }
-                    
+                    messageSB.Append((char)charValue);
+                    charValue = 0;
 
                 });
                 return messageSB.ToString();
@@ -111,7 +118,7 @@ namespace IPIO.Core.Algorithms
         }
 
         private static int GetLsb(int value) => value % 2;
-        private static bool IsFinalBitOfWord(int charBinaryIndex) => charBinaryIndex == 8;
+        private static bool IsFinalBitOfChar(int charBinaryIndex) => charBinaryIndex == 8;
         private static int ExposeNextBit(int value) => value / 2;
 
         private static int GetBytesCount(BitmapData bitmapData)
