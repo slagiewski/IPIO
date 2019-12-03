@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -140,6 +141,39 @@ namespace IPIO
                 DecodeRadioButton.IsChecked = true;
                 PerformActionButton.Content = "Decode";
                 InputText.IsEnabled = false;
+            }
+        }
+        private bool handle = true;
+        private void ComboBox_DropDownClosed(object sender, EventArgs e)
+        {
+            if (handle) Handle();
+            handle = true;
+        }
+
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ComboBox cmb = sender as ComboBox;
+            handle = !cmb.IsDropDownOpen;
+            Handle();
+        }
+
+        private void Handle()
+        {
+            switch (AlhorithmChooser.SelectedItem.ToString().Split(new string[] { ": " }, StringSplitOptions.None).Last())
+            {
+                case "LSB":
+                    _algorithm = new LsbAlgorithm();
+                    ClearWindow();
+                    break;
+                case "DCT":
+                    _algorithm = new DctAlgorithm();
+                    ClearWindow();
+                    break;
+                case "HaarWavelet":
+                    _algorithm = new HaarWaveletAlgorithm();
+                    ClearWindow();
+                    break;
+                default: _algorithm = new LsbAlgorithm(); break;
             }
         }
 
