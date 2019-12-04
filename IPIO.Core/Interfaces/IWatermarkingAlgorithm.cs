@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 
 namespace IPIO.Core.Interfaces
 {
-    public interface IStringEmbeddingAlgorithm
+    public interface IWatermarkingAlgorithm
     {
-        Task<Bitmap> EmbedAsync(Bitmap bitmap, string message);
+        Task<Bitmap> EmbedAsync(Bitmap originalImage, Bitmap message);
 
-        Task<string> RetrieveAsync(Bitmap bitmap);
+        Task<Bitmap> RetrieveAsync(Bitmap originalImage, Bitmap watermarkedImage, int watermarkLength);
     }
 }

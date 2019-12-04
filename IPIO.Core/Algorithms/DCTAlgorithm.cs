@@ -4,122 +4,105 @@ using IPIO.Core.Models;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace IPIO.Core.Algorithms
 {
-    public class DctAlgorithm : IStringEmbeddingAlgorithm
+    public class DctAlgorithm : IWatermarkingAlgorithm
     {
-        public async Task<Bitmap> EmbedAsync(Bitmap bmp, string message)
-        {
-            return await Task.Run(async () =>
-            {
-                var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-                var bitmapData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
-
-                var modifiedRgbValues = new byte[GetBytesCount(bitmapData)];
-
-                var blocks = bitmapData.IntoBlocks();
-
-                var messageWithEndChar = message + '\0';
-                var charBinaryIndex = 0;
-                var charIndex = 0;
-                int charValue = messageWithEndChar[charIndex];
-                bool MessageAlreadyEmbedded() => charIndex == messageWithEndChar.Length;
-
-                var newPixels = new Pixel[bmp.Width * bmp.Height];
-
-                blocks.Content.ForEach(block =>
-                {
-                    if (MessageAlreadyEmbedded())
-                    {
-                        BlockExtensions.CopyBlockIntoPixelsArray(block, bmp.Width, newPixels);
-                        return;
-                    }
-
-                    block.EmbedChar((byte)charValue);
-
-                    BlockExtensions.CopyBlockIntoPixelsArray(block, bmp.Width, newPixels);
-
-                    charIndex++;
-                    charBinaryIndex = 0;
-
-                    if (!MessageAlreadyEmbedded())
-                    {
-                        charValue = messageWithEndChar[charIndex];
-                    }
-                                        
-                });
-
-                newPixels.CopyToByteArray(modifiedRgbValues, bitmapData.Stride);
-
-                bmp.UnlockBits(bitmapData);
-
-                var bitmap = modifiedRgbValues.ToBitmap(bitmapData.Width, bitmapData.Height, bmp.PixelFormat);
-
-                var msgFromModifiedImage = await RetrieveAsync(bitmap, bmp);
-
-                if (msgFromModifiedImage != message)
-                {
-                    throw new Exception("Message was not embedded successfully!");
-                }
-
-                return bitmap;               
-            });
-        }
-
-        public async Task<string> RetrieveAsync(Bitmap bmp)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<string> RetrieveAsync(Bitmap bmp, Bitmap originalBitmap)
+        public async Task<Bitmap> EmbedAsync(Bitmap originalImage, Bitmap message)
         {
             return await Task.Run(() =>
             {
-                var watermarkedBitmapData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, bmp.PixelFormat);
-                var originalBitmapData = originalBitmap.LockBits(new Rectangle(0, 0, originalBitmap.Width, originalBitmap.Height), ImageLockMode.ReadWrite, originalBitmap.PixelFormat);
+                var originalBitmapData = LockBitmap(originalImage);
+                var messageBitmapData = LockBitmap(message);
 
-                var watermarkedBlocks = watermarkedBitmapData.IntoBlocks();
-                var originalBlocks = originalBitmapData.IntoBlocks();
+                var newPixels = new Pixel[originalImage.Width * originalImage.Height];
 
-                var charBinaryIndex = 0;
-                var charValue = 0;
-                var messageSB = new StringBuilder();
-                var messageRead = false;
+                var messageIndex = -1;
+                var messagePixels = messageBitmapData.ToPixels();
 
-                bool IsMessageEndChar() => charValue == 0;
+                var originalImageBlocks = originalBitmapData.ToBlocks();
 
-                var index = -1;
-                watermarkedBlocks.Content.ForEach(block =>
+                var blocks = originalImageBlocks.GetBlocksCoefficientsWithHighestDCTValues(messagePixels.Length);
+
+                blocks.ForEach(b =>
                 {
-                    index++;
-
-                    if (messageRead)
-                    {
-                        return;
-                    }
-
-                    charValue = block.GetChar(originalBlocks.Content[index]);
-                   
-                    if (IsMessageEndChar())
-                    {
-                        messageRead = true;
-                        return;
-                    }
-
-                    messageSB.Append((char)charValue);
-                    charValue = 0;
-
+                    messageIndex++;
+                    b.EmbedByte(messagePixels[messageIndex].B);
                 });
-                return messageSB.ToString();
+
+                originalImageBlocks.Content.ForEach(block =>
+                {
+                    BlockExtensions.CopyBlockIntoPixelsArray(block, originalImage.Width, newPixels);
+                });
+
+                var modifiedBitmapBytes = new byte[GetBytesCount(originalBitmapData)];
+
+                newPixels.CopyToByteArray(modifiedBitmapBytes, originalBitmapData.Stride);
+
+                originalImage.UnlockBits(originalBitmapData);
+                message.UnlockBits(messageBitmapData);
+
+                var bitmap = modifiedBitmapBytes.ToBitmap(originalBitmapData.Width, originalBitmapData.Height, originalImage.PixelFormat);
+
+                return bitmap;
             });
         }
 
-        private static int GetLsb(int value) => value % 2;
-        private static bool IsFinalBitOfChar(int charBinaryIndex) => charBinaryIndex == 8;
-        private static int ExposeNextBit(int value) => value / 2;
+        public async Task<Bitmap> RetrieveAsync(Bitmap originalImage, Bitmap watermarkedImage, int watermarkLength)
+        {
+            return await Task.Run(() =>
+            {
+                var watermarkedBitmapData = LockBitmap(watermarkedImage);
+                var originalBitmapData = LockBitmap(originalImage);
+
+                var watermarkedBlocks = watermarkedBitmapData.ToBlocks();
+                var originalBlocks = originalBitmapData.ToBlocks();
+
+                var blocks = originalBlocks.GetBlocksCoefficientsWithHighestDCTValues(watermarkLength);
+
+                var newPixels = new Pixel[watermarkLength];
+
+                var messageIndex = 0;
+                blocks.ForEach(b =>
+                {
+                    if (messageIndex == watermarkLength)
+                    {
+                        return;
+                    }
+
+                    var transformedBlock = watermarkedBlocks.Content.First(wb => b.Column == wb.Column && b.Row == wb.Row);
+
+                    var result = transformedBlock.GetEmbeddedByte(b);
+
+                    newPixels[messageIndex] = new Pixel(0, 0, result, messageIndex / 64, messageIndex % 64);
+
+                    messageIndex++;
+
+                });
+
+                originalImage.UnlockBits(originalBitmapData);
+                watermarkedImage.UnlockBits(watermarkedBitmapData);
+
+                var modifiedBitmapBytes = new byte[watermarkLength * 3];
+
+                newPixels.CopyToByteArray(modifiedBitmapBytes, 64 * 3);
+                
+                var bitmap = modifiedBitmapBytes.ToBitmap(64, 64, originalImage.PixelFormat);
+
+                return bitmap;
+            });
+        }
+
+        private static BitmapData LockBitmap(Bitmap originalImage) =>
+            originalImage.LockBits(
+                new Rectangle(0, 0, originalImage.Width, originalImage.Height),
+                ImageLockMode.ReadWrite,
+                originalImage.PixelFormat);
+
 
         private static int GetBytesCount(BitmapData bitmapData)
         {
