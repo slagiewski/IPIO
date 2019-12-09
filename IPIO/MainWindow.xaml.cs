@@ -28,7 +28,7 @@ namespace IPIO
             InitElementsState();
             WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
             //create alg factory
-            _algorithm = new HaarWaveletAlgorithm();
+            _algorithm = new DctAlgorithm();
         }
 
         private void InitElementsState()
@@ -187,19 +187,13 @@ namespace IPIO
         {
             switch (AlhorithmChooser.SelectedItem.ToString().Split(new string[] { ": " }, StringSplitOptions.None).Last())
             {
-                case "LSB":
-                    _algorithm = new LsbAlgorithm();
-                    ClearWindow();
+                case "HaarWavelet":
+                    _algorithm = new HaarWaveletAlgorithm();
                     break;
                 case "DCT":
                     _algorithm = new DctAlgorithm();
-                    ClearWindow();
                     break;
-                case "HaarWavelet":
-                    _algorithm = new HaarWaveletAlgorithm();
-                    ClearWindow();
-                    break;
-                default: _algorithm = new LsbAlgorithm(); break;
+                default: _algorithm = new DctAlgorithm(); break;
             }
         }
 

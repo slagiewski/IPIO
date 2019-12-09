@@ -21,11 +21,6 @@
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <TextBlock FontSize="25" HorizontalAlignment="Center">
-                        DCT
-                    </TextBlock>
-                </ComboBoxItem>
-                <ComboBoxItem>
-                    <TextBlock FontSize="25" HorizontalAlignment="Center">
                         HaarWavelet
                     </TextBlock>
                 </ComboBoxItem>
