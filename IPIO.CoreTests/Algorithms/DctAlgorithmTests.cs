@@ -45,7 +45,7 @@ namespace IPIO.Core.Algorithms.Tests
 
             var modifiedRgbValues = new byte[GetBytesCount(bitmapData)];
 
-            var blocks = bitmapData.IntoBlocks();
+            var blocks = bitmapData.ToBlocks();
 
             var newPixels = new Pixel[bmp.Width * bmp.Height];
 

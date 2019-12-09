@@ -14,9 +14,10 @@ namespace IPIO
 {
     public partial class MainWindow : Window
     {
-        private IStringEmbeddingAlgorithm _algorithm;
+        private IWatermarkingAlgorithm _algorithm;
         private Bitmap _loadedImage = null;
         private Bitmap _modifiedImage = null;
+        private Bitmap _watermarkImage = null;
         private PerformState _performAction = PerformState.ENCODE;
         private const string IMG_FILE_FILTERS = "Image files (*.png;*.jpeg;*.jpg)|*.png;*.jpeg;*.jpg";
         private const string SAVE_IMG_FILE_FILTERS = "Image files (*.png)|*.png";
@@ -55,16 +56,34 @@ namespace IPIO
             }
         }
 
+        private async void ChooseWatermarkButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Filter = IMG_FILE_FILTERS
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await PerformWithProgressBar(async () =>
+                {
+                    var bm = await Task.Run(() => (Bitmap)Bitmap.FromFile(dialog.FileName));
+                    Watermark.Source = bm.ToImage();
+                    _watermarkImage = bm;
+                });
+
+                ChangeEnableStatePerformActionButton(true);
+            }
+        }
+        
         private void EncodeRadioButton_Click(object sender, RoutedEventArgs e)
         {
             ChangePerformAction(PerformState.ENCODE);
-            Label_EditText.Text = "Encode  text:";
         }
 
         private void DecodeRadioButton_Click(object sender, RoutedEventArgs e)
         {
             ChangePerformAction(PerformState.DECODE);
-            Label_EditText.Text = "Decoded text:";
         }
 
         private async void PerformActionButton_Click(object sender, RoutedEventArgs e)
@@ -86,14 +105,13 @@ namespace IPIO
 
         private async Task EncodeImage()
         {
-            var input = InputText.Text;
-            if (string.IsNullOrEmpty(input))
+            if (_watermarkImage == null)
             {
-                MessageBox.Show("You need to type some text!");
+                MessageBox.Show("You need to choose watermark!");
                 return;
             }
 
-            var modifiedImageBitmap = await _algorithm.EmbedAsync(_loadedImage, input);
+            var modifiedImageBitmap = await _algorithm.EmbedAsync(_loadedImage, _watermarkImage);
             _modifiedImage = modifiedImageBitmap;
             ImageAfter.Source = modifiedImageBitmap.ToImage();
             ChangeEnableStateSaveButton(true);
@@ -101,9 +119,15 @@ namespace IPIO
 
         private async Task DecodeImage()
         {
-            var msg = await _algorithm.RetrieveAsync(_loadedImage);
-            InputText.Text = msg;
-            MessageBox.Show("Decoded text is in the box!", "Decoded");
+            if (_watermarkImage == null)
+            {
+                MessageBox.Show("You need to choose watermark!");
+                return;
+            }
+
+            var msg = await _algorithm.RetrieveAsync(_loadedImage, _watermarkImage, 64 * 64);
+            ImageAfter.Source = msg.ToImage();
+            MessageBox.Show("Done!");
             ChangeEnableStatePerformActionButton(false);
         }
 
@@ -126,13 +150,14 @@ namespace IPIO
         private void ChangePerformAction(PerformState newState)
         {
             _performAction = newState;
-            if (!string.IsNullOrEmpty(InputText.Text)) InputText.Text = "";
+            
             if (newState == PerformState.ENCODE)
             {
                 EncodeRadioButton.IsChecked = true;
                 DecodeRadioButton.IsChecked = false;
                 PerformActionButton.Content = "Encode";
-                InputText.IsEnabled = true;
+                ChooseWatermark.Content = "Choose watermark...";
+                ChooseWatermark.FontSize = 30;
 
             }
             if (newState == PerformState.DECODE)
@@ -140,7 +165,8 @@ namespace IPIO
                 EncodeRadioButton.IsChecked = false;
                 DecodeRadioButton.IsChecked = true;
                 PerformActionButton.Content = "Decode";
-                InputText.IsEnabled = false;
+                ChooseWatermark.Content = "Choose watermarked image...";
+                ChooseWatermark.FontSize = 21;
             }
         }
         private bool handle = true;
@@ -206,7 +232,8 @@ namespace IPIO
             _modifiedImage = null;
             ChangeEnableStateSaveButton(false);
             ChangeEnableStatePerformActionButton(false);
-            InputText.Text = "";
+            _watermarkImage = null;
+            Watermark.Source = null;
         }
 
     }

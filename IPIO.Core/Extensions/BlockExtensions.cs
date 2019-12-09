@@ -9,7 +9,7 @@ namespace IPIO.Core.Extensions
 {
     public static class BlockExtensions
     {
-        public static Blocks IntoBlocks(this BitmapData bitmapData, int blockWidth = 8, int blockHeight = 8)
+        public static Blocks ToBlocks(this BitmapData bitmapData, int blockWidth = 8, int blockHeight = 8)
         {
             var pixels = bitmapData.ToPixels();
 
@@ -29,6 +29,16 @@ namespace IPIO.Core.Extensions
             }
 
             return new Blocks(blocks, bitmapData.Width, bitmapData.Height, blockWidth, blockHeight);
+        }
+
+        public static List<Block> GetBlocksCoefficientsWithHighestDCTValues(this Blocks blocks, int length)
+        {
+            return blocks.Content
+                .Select(b => new { dct = b.GetDctOfBlueColor(), block = b })
+                .OrderByDescending(x => x.dct[1])
+                .Take(length)
+                .Select(x => x.block)
+                .ToList();
         }
 
         public static Block GetBlock(int blockWidth, int blockHeight, int bitmapWidth, Pixel[] pixels, int col, int row)
@@ -69,31 +79,33 @@ namespace IPIO.Core.Extensions
             }
         }
 
-        public static Block EmbedChar(this Block block, byte newValue)
+        public static Block EmbedByte(this Block block, byte newValue)
         {
             var blueDct = block.GetDctOfBlueColor();
-            blueDct[0] = GetTransformedValue(blueDct[1], newValue);
+            blueDct[1] = GetTransformedValue(blueDct[1], newValue);
 
             var newBlockOfBlueColor = blueDct.FromBlueDctToBlock(block.BlockWidth, block.BlockHeight);
 
             for (int i = 0; i < block.Pixels.Count; i++)
             {
                 var oldPixel = block.Pixels[i];
-                block.Pixels[i] = new Pixel(oldPixel.R, oldPixel.G, (byte)newBlockOfBlueColor[i], oldPixel.Row, oldPixel.Column);
+                block.Pixels[i] = new Pixel(oldPixel.R, oldPixel.G, (byte)Math.Max(0, Math.Min(255, newBlockOfBlueColor[i])), oldPixel.Row, oldPixel.Column);
             }
 
             return block;
         }
 
-        public static int GetChar(this Block transformedBlock, Block originalBlock)
+        public static byte GetEmbeddedByte(this Block transformedBlock, Block originalBlock)
         {
             var transformedBlockDct = transformedBlock.GetDctOfBlueColor();
             var originalBlockDct = originalBlock.GetDctOfBlueColor();
 
-            var transformedValue = transformedBlockDct[0];
-            var originalValue = originalBlockDct[0];
+            var transformedValue = transformedBlockDct[1];
+            var originalValue = originalBlockDct[1];
 
-            return (int)Math.Round(RetrieveTransformedValue(transformedValue, originalValue));
+            var retrievedValue = RetrieveTransformedValue(transformedValue, originalValue);
+
+            return (byte)Math.Min(255, Math.Max(0, retrievedValue));
         }
 
         private static double[] GetDctOfBlueColor(this Block block)
@@ -142,8 +154,8 @@ namespace IPIO.Core.Extensions
                             var al = DCTTools.CalculateAQ(l, blockHeight);
 
                             blueOfPixel += ak * al * dctBLock[l + blockWidth * k] * 
-                                   Math.Cos(((Math.PI * (2d * p + 1d) * k)) / (2 * blockWidth)) *
-                                   Math.Cos(((Math.PI * (2d * q + 1d) * l)) / (2 * blockHeight));
+                                   Math.Cos((Math.PI * (2d * p + 1d) * k) / (2 * blockWidth)) *
+                                   Math.Cos((Math.PI * (2d * q + 1d) * l) / (2 * blockHeight));
 
                         }
                     }
