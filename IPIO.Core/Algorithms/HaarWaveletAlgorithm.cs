@@ -5,6 +5,7 @@ using IPIO.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Text;
 using System.Threading.Tasks;
 using Haar = Accord.Math.Wavelets.Haar;
@@ -14,112 +15,113 @@ namespace IPIO.Core.Algorithms
     public class HaarWaveletAlgorithm : IWatermarkingAlgorithm
     {
         readonly int MAX_DEPTH = 4;
-        //public Task<Bitmap> EmbedAsync(Bitmap bitmap, string message)
-        //{
-        //    var messageWithEndChar = message + '\0';
-        //    var charBinaryIndex = 0;
-        //    var charIndex = 0;
-        //    int charValue = messageWithEndChar[charIndex];
-
-        //    bool MessageAlreadyEmbedded() => charIndex == messageWithEndChar.Length;
-
-        //    return Task.Run(() =>
-        //    {
-        //        var haar = new Haar(MAX_DEPTH);
-        //        var blueOfPixels = new List<double>();
-        //        bitmap.ForEach(pixel => { blueOfPixels.Add(pixel.B); });
-        //        var arrayBlueOfPixels = blueOfPixels.ToArray();
-        //        haar.Forward(arrayBlueOfPixels);
-        //        for (var i = 0; !MessageAlreadyEmbedded() && i < arrayBlueOfPixels.Length; i++)
-        //        {
-        //            arrayBlueOfPixels[i] = GetByteWithModifiedLsb((int)arrayBlueOfPixels[i], GetLsb(charValue));
-        //            if (IsEndOfChar(charBinaryIndex))
-        //            {
-        //                charBinaryIndex = 0;
-        //                charIndex++;
-        //                if (!MessageAlreadyEmbedded())
-        //                {
-        //                    charValue = messageWithEndChar[charIndex];
-        //                }
-        //            }
-        //            else
-        //            {
-        //                charBinaryIndex++;
-        //                charValue = ExposeNextBit(charValue);
-        //            }
-
-        //        }
-        //        haar.Backward(arrayBlueOfPixels);
-        //        var index = 0;
-        //        return bitmap.Select(pixel =>
-        //        {
-        //            return new Pixel(pixel.R, pixel.G, (int)arrayBlueOfPixels[index++], pixel.Alpha, pixel.Row, pixel.Column);
-        //        });
-        //    });
-        //}
-
-        //public Task<string> RetrieveAsync(Bitmap bitmap)
-        //{
-        //    return Task.Run(() =>
-        //    {
-        //        var charBinaryIndex = 0;
-        //        var charValue = 0;
-        //        var messageSB = new StringBuilder();
-        //        var messageRead = false;
-        //        bool IsMessageEndChar() => charValue == 0;
-
-
-        //        bitmap.ForEach(pixel =>
-        //        {
-        //            if (messageRead) return;
-        //            if (IsEndOfChar(charBinaryIndex))
-        //            {
-        //                if (IsMessageEndChar())
-        //                {
-        //                    messageRead = true;
-        //                    return;
-        //                }
-
-        //                messageSB.Append((char)charValue);
-        //                charBinaryIndex = 0;
-        //                charValue = 0;
-        //            }
-        //            var charBit = GetLsb(pixel.B);
-        //            charValue += charBit * (int)Math.Pow(2, charBinaryIndex++);
-        //        });
-
-        //        return messageSB.ToString();
-        //    });
-        //}
-
-
-        public Task<Bitmap> EmbedAsync(Bitmap originalImage, Bitmap message)
+      
+        public async Task<Bitmap> EmbedAsync(Bitmap originalImage, Bitmap message)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<Bitmap> RetrieveAsync(Bitmap originalImage, Bitmap watermarkedImage, int watermarkLength)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static int GetByteWithModifiedLsb(int value, int newLsb)
-        {
-            if (newLsb == 1)
+            return await Task.Run(() =>
             {
-                return value | newLsb;
-            }
-            else
-            {
-                return value & ~1;
-            }
+                var originalBitmapData = LockBitmap(originalImage);
+                var messageBitmapData = LockBitmap(message);
+
+                var newPixels = new Pixel[originalImage.Width * originalImage.Height];
+
+                var messageIndex = -1;
+                var messagePixels = messageBitmapData.ToPixels();
+
+                var blueOfPixels = new List<double>();
+
+                //ograniczyć się do rozmiaru wiadomości.. 
+                var pixels = originalBitmapData.ToPixels();
+                foreach (var pixel in pixels)
+                {
+                    blueOfPixels.Add(pixel.B);
+                }
+                var arrayBlueOfPixels = blueOfPixels.ToArray();
+
+                var originalHaar = new Haar(MAX_DEPTH);
+                originalHaar.Forward(arrayBlueOfPixels);
+
+                for (var index = 0; index < messagePixels.Length; index++)
+                {
+
+                    arrayBlueOfPixels[index] = GetTransformedValue(arrayBlueOfPixels[index], messagePixels[index].B);
+                }
+
+
+                originalHaar.Backward(arrayBlueOfPixels);
+                originalImage.UnlockBits(originalBitmapData);
+                message.UnlockBits(messageBitmapData);
+                var bitmap = originalImage;
+                var x = 0;
+                bitmap.Select(p =>
+                {
+                    if (x < messagePixels.Length)
+                    {
+                        return new Pixel(p.R, p.G, Math.Max((byte)0, Math.Min((byte)255, (byte)arrayBlueOfPixels[x++])), p.Row, p.Column);
+                    }
+                    return p;
+                });
+
+
+                return bitmap;
+            });
         }
 
-        private static int GetLsb(int value) => value % 2;
+        public async Task<Bitmap> RetrieveAsync(Bitmap originalImage, Bitmap watermarkedImage, int watermarkLength)
+        {
+            return await Task.Run(() =>
+            {
 
-        private static int ExposeNextBit(int value) => value / 2;
+                var originalBitmapData = LockBitmap(originalImage);
+                var originalPixels = originalBitmapData.ToPixels();
+                var newPixels = new Pixel[watermarkLength];
+                var blueOfOriginals = new List<double>();
+                var haar = new Haar(MAX_DEPTH);
 
-        private static bool IsEndOfChar(int charBinaryIndex) => charBinaryIndex == 7;
+                for (var i = 0; i < watermarkLength; i++)
+                {
+                    blueOfOriginals.Add(originalPixels[i].B);
+                }
 
+                var arrayOfBlues = blueOfOriginals.ToArray();
+                haar.Forward(arrayOfBlues);
+                for (var j = 0; j < arrayOfBlues.Length; j++)
+                {
+                    newPixels[j] = new Pixel(0, 0, (byte)arrayOfBlues[j], j / 64, j % 64);
+                }
+
+                originalImage.UnlockBits(originalBitmapData);
+                var modifiedBitmapBytes = new byte[watermarkLength * 3];
+
+                newPixels.CopyToByteArray(modifiedBitmapBytes, 64 * 3);
+
+                var bitmap = modifiedBitmapBytes.ToBitmap(64, 64, originalImage.PixelFormat);
+
+                return bitmap;
+            });
+        }
+
+
+        private double EmbedByte(double originalValue, double watermarkValue)
+        {
+            return GetTransformedValue(originalValue, watermarkValue);
+        }
+
+        private static BitmapData LockBitmap(Bitmap originalImage) =>
+          originalImage.LockBits(
+              new Rectangle(0, 0, originalImage.Width, originalImage.Height),
+              ImageLockMode.ReadWrite,
+              originalImage.PixelFormat);
+
+
+        private static double GetTransformedValue(double originalValue, double watermarkValue) =>
+           originalValue + 0.1 * watermarkValue;
+
+        private static double RetrieveTransformedValue(double encodedValue, double originalValue)
+        {
+            return (encodedValue - originalValue) / 0.1;
+        }
     }
+
+
 }
