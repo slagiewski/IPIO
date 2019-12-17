@@ -13,6 +13,7 @@ namespace IPIO.Core.Algorithms
 {
     public class FourierAlgorithm : IWatermarkingAlgorithm
     {
+        private readonly double ALPHA = 0.1;
         private DftTransform _dftTransform = new DftTransform();
         public async Task<Bitmap> EmbedAsync(Bitmap originalImage, Bitmap watermark)
         {
@@ -39,7 +40,7 @@ namespace IPIO.Core.Algorithms
                 var vectorIndex = index.Item1 * width + index.Item2;
                 var coefficient = bestCoeficients[vectorIndex];
                 originalImage[coefficient.I, coefficient.J] =
-                    Formula(coefficient.Value, watermarkValue);
+                    EmbeddFormula(coefficient.Value, watermarkValue);
             });
 
             return originalImage;
@@ -86,7 +87,7 @@ namespace IPIO.Core.Algorithms
             });
         }
 
-        private Complex[,] Extract(Complex[,] dftWatermarked, Complex[,] originalImage, int size = 32)
+        private Complex[,] Extract(Complex[,] dftWatermarked, Complex[,] originalImage, int size)
         {
             var bestCoeficients = BestCoeficients(originalImage);
 
@@ -104,15 +105,15 @@ namespace IPIO.Core.Algorithms
 
         }
 
-        private Complex Formula(Complex originalvalue, Complex watermarkValue)
+        private Complex EmbeddFormula(Complex originalvalue, Complex watermarkValue)
         {
-            return originalvalue + 0.1 * Complex.Abs(originalvalue) * watermarkValue;
+            return originalvalue + ALPHA * Complex.Abs(originalvalue) * watermarkValue;
         }
 
         public Complex ExtractFormula(Complex encodedValue, Complex originalValue)
         {
-            var value = 0.1 * Complex.Abs(originalValue);
-            value = value == 0 ? Double.MaxValue : value;
+            var value = ALPHA * Complex.Abs(originalValue);
+            value = value == 0 ? double.MaxValue : value;
             return (encodedValue - originalValue) / value;
         }
     }
