@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace IPIO.Core.Extensions
@@ -21,7 +22,7 @@ namespace IPIO.Core.Extensions
                 var modifiedPixel = expression(pixel);
                 Pixel.SetByteArrayValue(modifiedRgbValues, modifiedPixel, bitmapData.Stride);
             });
-            
+
             bmp.UnlockBits(bitmapData);
 
             var bitmap = modifiedRgbValues.ToBitmap(bitmapData.Width, bitmapData.Height, bmp.PixelFormat);
@@ -59,7 +60,7 @@ namespace IPIO.Core.Extensions
             var pixels = new List<Pixel>(bitmapData.Width * bitmapData.Height);
 
             Iterate(
-                bitmapData, 
+                bitmapData,
                 pixel =>
                 {
                     pixels.Add(pixel);
@@ -88,6 +89,42 @@ namespace IPIO.Core.Extensions
             }
         }
 
+        public static Complex[,] ToComplexArray(this Bitmap bitmap)
+        {
+            Complex[,] result = new Complex[bitmap.Width, bitmap.Height];
+
+            for (int w = 0; w < bitmap.Width; w++)
+            {
+                for (int h = 0; h < bitmap.Height; h++)
+                {
+                    result[w, h] = new Complex(bitmap.GetPixel(w, h).R, 0);
+                }
+            }
+
+            return result;
+        }
+
+        public static Bitmap ToBitmap(this Complex[,] source)
+        {
+            int width = source.GetLength(0);
+            int height = source.GetLength(1);
+            var bitmap = new Bitmap(width, height);
+
+            for (int w = 0; w < bitmap.Width; w++)
+            {
+                for (int h = 0; h < bitmap.Height; h++)
+                {
+                    var value = Math.Max(source[w, h].Real.ToInt(), 0);
+                    value = Math.Min(value, 255);
+                    bitmap.SetPixel(w, h, Color.FromArgb(value, value, value));
+                }
+            }
+
+            return bitmap;
+        }
+
+
+
         private static int GetBytesCount(this BitmapData bitmapData)
         {
             var distanceBetweenVerticalPixels = bitmapData.Stride;
@@ -106,5 +143,6 @@ namespace IPIO.Core.Extensions
             var addressOfTheFirstLine = bitmapData.Scan0;
             Marshal.Copy(addressOfTheFirstLine, rgbValues, 0, bytes);
         }
+
     }
 }

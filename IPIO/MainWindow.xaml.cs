@@ -19,7 +19,7 @@ namespace IPIO
         private Bitmap _modifiedImage = null;
         private Bitmap _watermarkImage = null;
         private PerformState _performAction = PerformState.ENCODE;
-        private const string IMG_FILE_FILTERS = "Image files (*.png;*.jpeg;*.jpg)|*.png;*.jpeg;*.jpg";
+        private const string IMG_FILE_FILTERS = "Image files (*.png;*.jpeg;*.jpg;)|*.png;*.jpeg;*.jpg";
         private const string SAVE_IMG_FILE_FILTERS = "Image files (*.png)|*.png";
 
         public MainWindow()
@@ -28,7 +28,7 @@ namespace IPIO
             InitElementsState();
             WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
             //create alg factory
-            _algorithm = new DctAlgorithm();
+            _algorithm = new FourierAlgorithm();
         }
 
         private void InitElementsState()
