@@ -40,20 +40,12 @@ namespace IPIO.Core.Algorithms
                 var coefficient = bestCoeficients[vectorIndex];
                 originalImage[coefficient.I, coefficient.J] =
                     Formula(coefficient.Value, watermarkValue);
-
-
-                //originalImage[coefficient.I + 20, coefficient.J + 20] =
-                //    Formula(originalImage[coefficient.I + 20, coefficient.J + 20], watermarkValue);
-
             });
 
             return originalImage;
         }
 
-        private Complex Formula(Complex originalvalue, Complex watermarkValue)
-        {
-            return originalvalue + 0.1 * Complex.Abs(originalvalue) * watermarkValue;
-        }
+       
 
         private static List<Coefficient<Complex>> BestCoeficients(Complex[,] originalImage)
         {
@@ -83,10 +75,45 @@ namespace IPIO.Core.Algorithms
         {
             return await Task.Run(() =>
             {
+                var originalArray = originalImage.ToComplexArray();
+                var watermarkArray = watermarkedImage.ToComplexArray();
 
+                var dftOriginal = originalArray.MapForBlock(_dftTransform.Execute);
+                var dftWaterked = watermarkArray.MapForBlock(_dftTransform.Execute);
 
-                return watermarkedImage; //CHANGE
+                var watermark = Extract(dftWaterked, dftOriginal, 64);
+                return watermark.ToBitmap();
             });
+        }
+
+        private Complex[,] Extract(Complex[,] dftWatermarked, Complex[,] originalImage, int size = 32)
+        {
+            var bestCoeficients = BestCoeficients(originalImage);
+
+            Complex[,] watermark = new Complex[size, size];
+
+            for (int i = 0; i < size * size; i++)
+            {
+                var coefficient = bestCoeficients[i];
+                var originalValue = originalImage[coefficient.I, coefficient.J];
+                var encodedValue = dftWatermarked[coefficient.I, coefficient.J];
+                watermark[i / size, i % size] = ExtractFormula(encodedValue, originalValue);
+            }
+
+            return watermark;
+
+        }
+
+        private Complex Formula(Complex originalvalue, Complex watermarkValue)
+        {
+            return originalvalue + 0.1 * Complex.Abs(originalvalue) * watermarkValue;
+        }
+
+        public Complex ExtractFormula(Complex encodedValue, Complex originalValue)
+        {
+            var value = 0.1 * Complex.Abs(originalValue);
+            value = value == 0 ? Double.MaxValue : value;
+            return (encodedValue - originalValue) / value;
         }
     }
 }

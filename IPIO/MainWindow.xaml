@@ -21,6 +21,11 @@
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <TextBlock FontSize="25" HorizontalAlignment="Center">
+                        FourierAlgorithm
+                    </TextBlock>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <TextBlock FontSize="25" HorizontalAlignment="Center">
                         HaarWavelet
                     </TextBlock>
                 </ComboBoxItem>
