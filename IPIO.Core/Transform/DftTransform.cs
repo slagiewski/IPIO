@@ -7,7 +7,7 @@ namespace IPIO.Core.Transform
 {
     public class DftTransform
     {
-        public Complex[,] Execute(Complex[,] data)
+        public Complex[,] Transform(Complex[,] data)
         {
             var width = data.GetLength(0);
             var height = data.GetLength(1);
@@ -18,7 +18,7 @@ namespace IPIO.Core.Transform
             {
                 for (int v = 0; v < height; v++)
                 {
-                    var sum = CalculateCoefficientSum(data, width, height, u, v, Direction.Normal);
+                    var sum = CalcSum(data, width, height, u, v, Direction.Normal);
                     result[u, v] = sum;
                 }
             }
@@ -26,7 +26,7 @@ namespace IPIO.Core.Transform
             return result;
         }
 
-        private Complex CalculateCoefficientSum(Complex[,] data, int width, int height, int u, int v,
+        private Complex CalcSum(Complex[,] data, int width, int height, int u, int v,
             Direction direction)
         {
             var sum = Complex.Zero;
@@ -45,7 +45,7 @@ namespace IPIO.Core.Transform
             return sum;
         }
 
-        public Complex[,] ExecuteInverse(Complex[,] data)
+        public Complex[,] UndoTransform(Complex[,] data)
         {
             var width = data.GetLength(0);
             var height = data.GetLength(1);
@@ -56,7 +56,7 @@ namespace IPIO.Core.Transform
             {
                 for (int v = 0; v < height; v++)
                 {
-                    var sum = CalculateCoefficientSum(data, width, height, u, v, Direction.Inverse);
+                    var sum = CalcSum(data, width, height, u, v, Direction.Inverse);
                     result[u, v] = sum / (width * height);
                 }
             }

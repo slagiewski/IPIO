@@ -63,11 +63,11 @@ namespace IPIO.Core.Algorithms
 
         private Complex[,] Transform(Complex[,] array)
         {
-            return array.MapForBlock(_dftTransform.Execute);
+            return array.MapForBlock(_dftTransform.Transform);
         }
         private Complex[,] ReverseTransform(Complex[,] array)
         {
-            return array.MapForBlock(_dftTransform.ExecuteInverse);
+            return array.MapForBlock(_dftTransform.UndoTransform);
         }
 
 
@@ -79,8 +79,8 @@ namespace IPIO.Core.Algorithms
                 var originalArray = originalImage.ToComplexArray();
                 var watermarkArray = watermarkedImage.ToComplexArray();
 
-                var dftOriginal = originalArray.MapForBlock(_dftTransform.Execute);
-                var dftWaterked = watermarkArray.MapForBlock(_dftTransform.Execute);
+                var dftOriginal = originalArray.MapForBlock(_dftTransform.Transform);
+                var dftWaterked = watermarkArray.MapForBlock(_dftTransform.Transform);
 
                 var watermark = Extract(dftWaterked, dftOriginal, 64);
                 return watermark.ToBitmap();
