@@ -14,7 +14,7 @@ namespace IPIO.Core.Extensions
             var height = array.GetLength(1);
 
             var result = new Complex[width, height];
-            array.DoForBlock((slice, startW, startH) =>
+            array.ActionForBlock((slice, startW, startH) =>
             {
                 var transform = transformation(slice);
                 transform.CopyTo(result, 0, BLOCK_SIZE - 1, 0, BLOCK_SIZE - 1, startW, startH);
@@ -23,11 +23,11 @@ namespace IPIO.Core.Extensions
             return result;
         }
 
-        public static T[,] Slice<T>(this T[,] values, int rowMin, int rowMax, int colMin, int colMax)
+        public static Complex[,] Slice<Complex>(this Complex[,] values, int rowMin, int rowMax, int colMin, int colMax)
         {
             int numRows = rowMax - rowMin + 1;
             int numCols = colMax - colMin + 1;
-            T[,] result = new T[numRows, numCols];
+            Complex[,] result = new Complex[numRows, numCols];
 
             int totalCols = values.GetUpperBound(1) + 1;
             int fromIndex = rowMin * totalCols + colMin;
@@ -42,7 +42,7 @@ namespace IPIO.Core.Extensions
             return result;
         }
 
-        public static void DoForBlock<T>(this T[,] array, Action<T[,], int, int> transformation, int blockSize = 8)
+        public static void ActionForBlock<Complex>(this Complex[,] array, Action<Complex[,], int, int> transformation, int blockSize = 8)
         {
             var width = array.GetLength(0);
             var height = array.GetLength(1);
@@ -60,23 +60,17 @@ namespace IPIO.Core.Extensions
             }
         }
 
-        public static void CopyTo<T>(this T[,] fromArray, T[,] toArray,
+        public static void CopyTo<Complex>(this Complex[,] fromArray, Complex[,] toArray,
             int fromRowMin, int fromRowMax, int fromColMin,
             int fromColMax, int toRowMin, int toColMin)
         {
-            // Get the number of columns in each array.
             int fromNumCols = fromArray.GetUpperBound(1) + 1;
             int toNumCols = toArray.GetUpperBound(1) + 1;
-
-            // Get the number of rows and columns we will copy.
             int numRows = fromRowMax - fromRowMin + 1;
             int numCols = fromColMax - fromColMin + 1;
-
-            // Initialize the indices for copying.
             int fromIndex = fromRowMin * fromNumCols + fromColMin;
             int toIndex = toRowMin * toNumCols + toColMin;
 
-            // Copy.
             for (int row = 0; row <= numRows - 1; row++)
             {
                 Array.Copy(fromArray, fromIndex, toArray, toIndex, numCols);
@@ -85,7 +79,7 @@ namespace IPIO.Core.Extensions
             }
         }
 
-        public static void ForEach<T>(this T[,] data, Action<T, Tuple<int, int>> indexedLambda)
+        public static void ForEach<Complex>(this Complex[,] data, Action<Complex, Tuple<int, int>> indexedLambda)
         {
             var width = data.GetLength(0);
             var height = data.GetLength(1);

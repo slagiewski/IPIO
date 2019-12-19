@@ -4,13 +4,13 @@ using System.Text;
 
 namespace IPIO.Core.Models
 {
-    public class Coefficient<T>
+    public class Coefficient<Complex>
     {
-        public T Value { get; }
+        public Complex Value { get; }
         public int I { get; }
         public int J { get; }
 
-        public Coefficient(T value, int i, int j)
+        public Coefficient(Complex value, int i, int j)
         {
             Value = value;
             I = i;

@@ -52,7 +52,7 @@ namespace IPIO.Core.Algorithms
         {
             var bestCoeficients = new List<Coefficient<Complex>>();
 
-            originalImage.DoForBlock((slice, startW, startH) =>
+            originalImage.ActionForBlock((slice, startW, startH) =>
             {
                 bestCoeficients.Add(new Coefficient<Complex>(slice[1, 1], startW + 1, startH + 1));
             });
