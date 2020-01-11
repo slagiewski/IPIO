@@ -1,6 +1,7 @@
 ﻿using IPIO.Core.Algorithms;
 using IPIO.Core.Algorithms.Formulas;
 using IPIO.Core.Interfaces;
+using IPIO.Core.Utils;
 using IPIO.Extensions;
 using Microsoft.Win32;
 using System;
@@ -143,8 +144,12 @@ namespace IPIO
 
             var algorithm = CreateSelectedAlgorithmInstance();
             var modifiedImageBitmap = await algorithm.EmbedAsync(_loadedImage, _watermarkImage);
+            var efficiency = await ImageMetadata.GetAlgorithmEfficiencyAsync(_loadedImage, modifiedImageBitmap);
             _modifiedImage = modifiedImageBitmap;
             ImageAfter.Source = modifiedImageBitmap.ToImage();
+
+            MessageBox.Show($"Done! MSE: {efficiency.MSE} PSNR: {efficiency.PSNR}");
+
             ChangeEnableStateSaveButton(true);
         }
 
