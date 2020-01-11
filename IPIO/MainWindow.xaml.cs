@@ -163,9 +163,11 @@ namespace IPIO
 
             var algorithm = CreateSelectedAlgorithmInstance();
             var msg = await algorithm.RetrieveAsync(_loadedImage, _watermarkImage, 64 * 64);
+            _modifiedImage = msg;
             ImageAfter.Source = msg.ToImage();
             MessageBox.Show("Done!");
-            ChangeEnableStatePerformActionButton(false);
+            ChangeEnableStatePerformActionButton(true);
+            ChangeEnableStateSaveButton(true);
         }
 
         private async void SaveFileButton_Click(object sender, RoutedEventArgs e)
