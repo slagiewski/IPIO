@@ -1,4 +1,5 @@
 ﻿using IPIO.Core.Algorithms;
+using IPIO.Core.Algorithms.Formulas;
 using IPIO.Core.Interfaces;
 using IPIO.Extensions;
 using Microsoft.Win32;
@@ -14,7 +15,17 @@ namespace IPIO
 {
     public partial class MainWindow : Window
     {
-        private IWatermarkingAlgorithm _algorithm;
+        private Type _algorithmType;
+        private Type _selectedFormulaType;
+
+        private readonly Type[] _formulas = new[]
+        {
+            typeof(AbsExtendedBasicMultiplicationFormula),
+            typeof(ExtendedBasicMultiplicationFormula),
+            typeof(BasicMultiplicationFormula)
+        };
+
+        private double _alpha = 0.1;
         private Bitmap _loadedImage = null;
         private Bitmap _modifiedImage = null;
         private Bitmap _watermarkImage = null;
@@ -27,8 +38,9 @@ namespace IPIO
             InitializeComponent();
             InitElementsState();
             WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
-            //create alg factory
-            _algorithm = new DctAlgorithm();
+            _selectedFormulaType = _formulas[2];
+            _algorithmType = typeof(DctAlgorithm);
+            AlphaTextBox.Text = "0.1";
         }
 
         private void InitElementsState()
@@ -75,7 +87,7 @@ namespace IPIO
                 ChangeEnableStatePerformActionButton(true);
             }
         }
-        
+
         private void EncodeRadioButton_Click(object sender, RoutedEventArgs e)
         {
             ChangePerformAction(PerformState.ENCODE);
@@ -103,6 +115,18 @@ namespace IPIO
             ClearWindow();
         }
 
+        private bool ParseAlpha()
+        {
+            var valid = double.TryParse(AlphaTextBox.Text.Replace('.', ','), out var alpha) && alpha > 0 && alpha < 1;
+
+            if (valid)
+            {
+                _alpha = alpha;
+            }
+
+            return valid;
+        }
+
         private async Task EncodeImage()
         {
             if (_watermarkImage == null)
@@ -111,7 +135,14 @@ namespace IPIO
                 return;
             }
 
-            var modifiedImageBitmap = await _algorithm.EmbedAsync(_loadedImage, _watermarkImage);
+            if (!ParseAlpha())
+            {
+                MessageBox.Show("Invalid alpha value!");
+                return;
+            }
+
+            var algorithm = CreateSelectedAlgorithmInstance();
+            var modifiedImageBitmap = await algorithm.EmbedAsync(_loadedImage, _watermarkImage);
             _modifiedImage = modifiedImageBitmap;
             ImageAfter.Source = modifiedImageBitmap.ToImage();
             ChangeEnableStateSaveButton(true);
@@ -125,7 +156,13 @@ namespace IPIO
                 return;
             }
 
-            var msg = await _algorithm.RetrieveAsync(_loadedImage, _watermarkImage, 64 * 64);
+            if (!ParseAlpha())
+            {
+                MessageBox.Show("Invalid alpha value!");
+            }
+
+            var algorithm = CreateSelectedAlgorithmInstance();
+            var msg = await algorithm.RetrieveAsync(_loadedImage, _watermarkImage, 64 * 64);
             ImageAfter.Source = msg.ToImage();
             MessageBox.Show("Done!");
             ChangeEnableStatePerformActionButton(false);
@@ -144,21 +181,19 @@ namespace IPIO
                 MessageBox.Show("Successfully saved!", "Saved");
                 ClearWindow();
             }
-
         }
 
         private void ChangePerformAction(PerformState newState)
         {
             _performAction = newState;
-            
+
             if (newState == PerformState.ENCODE)
             {
                 EncodeRadioButton.IsChecked = true;
                 DecodeRadioButton.IsChecked = false;
                 PerformActionButton.Content = "Encode";
                 ChooseWatermark.Content = "Choose watermark...";
-                ChooseWatermark.FontSize = 30;
-
+                ChooseWatermark.FontSize = 15;
             }
             if (newState == PerformState.DECODE)
             {
@@ -166,13 +201,15 @@ namespace IPIO
                 DecodeRadioButton.IsChecked = true;
                 PerformActionButton.Content = "Decode";
                 ChooseWatermark.Content = "Choose watermarked image...";
-                ChooseWatermark.FontSize = 21;
+                ChooseWatermark.FontSize = 14;
             }
         }
+
         private bool handle = true;
+
         private void ComboBox_DropDownClosed(object sender, EventArgs e)
         {
-            if (handle) Handle();
+            if (handle) HandleAlgorithmChange();
             handle = true;
         }
 
@@ -180,25 +217,44 @@ namespace IPIO
         {
             ComboBox cmb = sender as ComboBox;
             handle = !cmb.IsDropDownOpen;
-            Handle();
+            HandleAlgorithmChange();
         }
 
-        private void Handle()
+        private void HandleAlgorithmChange()
         {
-            switch (AlhorithmChooser.SelectedItem.ToString().Split(new string[] { ": " }, StringSplitOptions.None).Last())
+            _algorithmType = (AlhorithmChooser.SelectedItem.ToString().Split(new string[] { ": " }, StringSplitOptions.None).Last()) switch
             {
-                case "HaarWavelet":
-                    _algorithm = new HaarWaveletAlgorithm();
-                    break;
-                case "DCT":
-                    _algorithm = new DctAlgorithm();
-                    break;
-                case "FourierAlgorithm":
-                    _algorithm = new FourierAlgorithm();
-                    break;
-                default: _algorithm = new DctAlgorithm(); break;
-            }
+                "DCT" => typeof(DctAlgorithm),
+                "FourierAlgorithm" => typeof(FourierAlgorithm),
+                _ => typeof(DctAlgorithm),
+            };
         }
+
+        private void HandleFormulaChange()
+        {
+            var selectedFormula = FormulaChooser.SelectedItem.ToString().Split(new string[] { ": " }, StringSplitOptions.None).Last();
+            _selectedFormulaType = _formulas
+                .FirstOrDefault(t =>
+                    t.GetProperty(nameof(IFormula.Name))
+                    ?.GetValue(null, null) as string == selectedFormula
+                );
+        }
+
+        private void FormulaComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ComboBox cmb = sender as ComboBox;
+            handle = !cmb.IsDropDownOpen;
+            HandleFormulaChange();
+        }
+
+        private IWatermarkingAlgorithm CreateSelectedAlgorithmInstance() =>
+            Activator.CreateInstance(
+                _algorithmType,
+                Activator.CreateInstance(
+                    _selectedFormulaType,
+                    _alpha)
+                )
+            as IWatermarkingAlgorithm;
 
         private void ChangeEnableStateSaveButton(bool enable) => SaveButton.IsEnabled = enable;
 
@@ -232,10 +288,10 @@ namespace IPIO
             _watermarkImage = null;
             Watermark.Source = null;
         }
-
     }
 }
-enum PerformState
+
+internal enum PerformState
 {
     ENCODE,
     DECODE

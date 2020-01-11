@@ -56,7 +56,7 @@ namespace IPIO.Core.Algorithms
                         return new Pixel(r, pixel.G, b, pixel.Alpha, pixel.Row, pixel.Column);
                     }
                 });
-            });                
+            });
         }
 
         public async Task<string> RetrieveAsync(Bitmap bitmap)

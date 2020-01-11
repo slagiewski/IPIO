@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IPIO.Core.Extensions
 {
@@ -13,11 +11,10 @@ namespace IPIO.Core.Extensions
                 var int32 = Convert.ToInt32(value);
                 return int32;
             }
-            catch (Exception e)
+            catch
             {
                 return value > 0 ? Int32.MaxValue : Int32.MinValue;
             }
-
         }
     }
 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace IPIO.Core.Models
+﻿namespace IPIO.Core.Models
 {
     public class Coefficient<Complex>
     {

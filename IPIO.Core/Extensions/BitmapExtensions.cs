@@ -123,8 +123,6 @@ namespace IPIO.Core.Extensions
             return bitmap;
         }
 
-
-
         private static int GetBytesCount(this BitmapData bitmapData)
         {
             var distanceBetweenVerticalPixels = bitmapData.Stride;
@@ -143,6 +141,5 @@ namespace IPIO.Core.Extensions
             var addressOfTheFirstLine = bitmapData.Scan0;
             Marshal.Copy(addressOfTheFirstLine, rgbValues, 0, bytes);
         }
-
     }
 }

@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace IPIO.Core.Extensions
 {
     public static class ComplexExtensions
     {
         private static readonly int BLOCK_SIZE = 8;
+
         public static Complex[,] MapForBlock(this Complex[,] array, Func<Complex[,], Complex[,]> transformation)
         {
             var width = array.GetLength(0);

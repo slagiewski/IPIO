@@ -1,4 +1,5 @@
-﻿namespace IPIO.Core.Models
+﻿
+namespace IPIO.Core.Models
 {
     internal class Dct
     {

@@ -1,17 +1,23 @@
-﻿using IPIO.Core.Extensions;
+﻿using IPIO.Core.Algorithms.Formulas;
+using IPIO.Core.Extensions;
 using IPIO.Core.Interfaces;
 using IPIO.Core.Models;
-using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IPIO.Core.Algorithms
 {
     public class DctAlgorithm : IWatermarkingAlgorithm
     {
+        public IFormula Formula { get; }
+
+        public DctAlgorithm(IFormula encodingFormula)
+        {
+            Formula = encodingFormula;
+        }
+
         public async Task<Bitmap> EmbedAsync(Bitmap originalImage, Bitmap message)
         {
             return await Task.Run(() =>
@@ -31,7 +37,7 @@ namespace IPIO.Core.Algorithms
                 blocks.ForEach(b =>
                 {
                     messageIndex++;
-                    b.EmbedByte(messagePixels[messageIndex].B);
+                    b.EmbedByte(messagePixels[messageIndex].B, Formula);
                 });
 
                 originalImageBlocks.Content.ForEach(block =>
@@ -76,12 +82,11 @@ namespace IPIO.Core.Algorithms
 
                     var transformedBlock = watermarkedBlocks.Content.First(wb => b.Column == wb.Column && b.Row == wb.Row);
 
-                    var result = transformedBlock.GetEmbeddedByte(b);
+                    var result = transformedBlock.GetEmbeddedByte(b, Formula);
 
-                    newPixels[messageIndex] = new Pixel(0, 0, result, messageIndex / 64, messageIndex % 64);
+                    newPixels[messageIndex] = new Pixel(result, result, result, messageIndex / 64, messageIndex % 64);
 
                     messageIndex++;
-
                 });
 
                 originalImage.UnlockBits(originalBitmapData);
@@ -90,7 +95,7 @@ namespace IPIO.Core.Algorithms
                 var modifiedBitmapBytes = new byte[watermarkLength * 3];
 
                 newPixels.CopyToByteArray(modifiedBitmapBytes, 64 * 3);
-                
+
                 var bitmap = modifiedBitmapBytes.ToBitmap(64, 64, originalImage.PixelFormat);
 
                 return bitmap;
@@ -103,13 +108,10 @@ namespace IPIO.Core.Algorithms
                 ImageLockMode.ReadWrite,
                 originalImage.PixelFormat);
 
-
         private static int GetBytesCount(BitmapData bitmapData)
         {
             var distanceBetweenVerticalPixels = bitmapData.Stride;
             return distanceBetweenVerticalPixels * bitmapData.Height;
         }
-
-     
     }
 }

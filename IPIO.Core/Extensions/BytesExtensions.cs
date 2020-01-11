@@ -26,7 +26,6 @@ namespace IPIO.Core.Extensions
 
                 return bmp;
             }
-
         }
 
         public static IEnumerable<Pixel> ToPixels(this byte[] bytes, int bitmapWidth, int bitmapHeight, int stride, PixelFormat pixelFormat)

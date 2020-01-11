@@ -42,7 +42,7 @@ namespace IPIO.Core.Algorithms
                         {
                             charValue = messageWithEndChar[charIndex];
                         }
-                        
+
                         return new Pixel(r, g, pixel.B, pixel.Alpha, pixel.Row, pixel.Column);
                     }
                     else
@@ -61,7 +61,7 @@ namespace IPIO.Core.Algorithms
                         return new Pixel(r, g, b, pixel.Alpha, pixel.Row, pixel.Column);
                     }
                 });
-            });                
+            });
         }
 
         public async Task<string> RetrieveAsync(Bitmap bitmap)

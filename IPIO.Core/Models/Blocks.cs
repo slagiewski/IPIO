@@ -28,6 +28,5 @@ namespace IPIO.Core.Models
         public int NumberOfRows => OriginalHeightInPixels / BlockHeight;
 
         public int NumberOfPixels => NumberOfColumns * NumberOfRows * BlockHeight * BlockWidth;
-
     }
 }

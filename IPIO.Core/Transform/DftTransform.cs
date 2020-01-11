@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace IPIO.Core.Transform
 {
@@ -70,14 +68,16 @@ namespace IPIO.Core.Transform
             {
                 case Direction.Normal:
                     return -1;
+
                 case Direction.Inverse:
                     return 1;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
             }
         }
 
-        enum Direction
+        private enum Direction
         {
             Normal,
             Inverse

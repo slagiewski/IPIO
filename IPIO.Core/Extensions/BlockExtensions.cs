@@ -1,4 +1,5 @@
-﻿using IPIO.Core.Models;
+﻿using IPIO.Core.Algorithms.Formulas;
+using IPIO.Core.Models;
 using IPIO.Core.Utils;
 using System;
 using System.Collections.Generic;
@@ -79,10 +80,10 @@ namespace IPIO.Core.Extensions
             }
         }
 
-        public static Block EmbedByte(this Block block, byte newValue)
+        public static Block EmbedByte(this Block block, byte newValue, IFormula formula)
         {
             var blueDct = block.GetDctOfBlueColor();
-            blueDct[1] = GetTransformedValue(blueDct[1], newValue);
+            blueDct[1] = formula.GetTransformedValue(blueDct[1], newValue);
 
             var newBlockOfBlueColor = blueDct.FromBlueDctToBlock(block.BlockWidth, block.BlockHeight);
 
@@ -95,7 +96,7 @@ namespace IPIO.Core.Extensions
             return block;
         }
 
-        public static byte GetEmbeddedByte(this Block transformedBlock, Block originalBlock)
+        public static byte GetEmbeddedByte(this Block transformedBlock, Block originalBlock, IFormula formula)
         {
             var transformedBlockDct = transformedBlock.GetDctOfBlueColor();
             var originalBlockDct = originalBlock.GetDctOfBlueColor();
@@ -103,7 +104,7 @@ namespace IPIO.Core.Extensions
             var transformedValue = transformedBlockDct[1];
             var originalValue = originalBlockDct[1];
 
-            var retrievedValue = RetrieveTransformedValue(transformedValue, originalValue);
+            var retrievedValue = formula.RetrieveTransformedValue(transformedValue, originalValue);
 
             return (byte)Math.Min(255, Math.Max(0, retrievedValue));
         }
@@ -153,10 +154,9 @@ namespace IPIO.Core.Extensions
                             var ak = DCTTools.CalculateAP(k, blockWidth);
                             var al = DCTTools.CalculateAQ(l, blockHeight);
 
-                            blueOfPixel += ak * al * dctBLock[l + blockWidth * k] * 
+                            blueOfPixel += ak * al * dctBLock[l + blockWidth * k] *
                                    Math.Cos((Math.PI * (2d * p + 1d) * k) / (2 * blockWidth)) *
                                    Math.Cos((Math.PI * (2d * q + 1d) * l) / (2 * blockHeight));
-
                         }
                     }
 
@@ -166,14 +166,5 @@ namespace IPIO.Core.Extensions
 
             return blueOfPixels;
         }
-
-        private static double GetTransformedValue(double originalValue, double watermarkValue) =>
-            originalValue + 0.1 * watermarkValue;
-
-        private static double RetrieveTransformedValue(double encodedValue, double originalValue)
-        {
-            return (encodedValue - originalValue) / 0.1;
-        }
     }
 }
-

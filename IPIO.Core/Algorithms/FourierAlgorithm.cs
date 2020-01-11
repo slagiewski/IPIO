@@ -1,20 +1,25 @@
-﻿using IPIO.Core.Extensions;
+﻿using IPIO.Core.Algorithms.Formulas;
+using IPIO.Core.Extensions;
 using IPIO.Core.Interfaces;
 using IPIO.Core.Models;
 using IPIO.Core.Transform;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IPIO.Core.Algorithms
 {
     public class FourierAlgorithm : IWatermarkingAlgorithm
     {
-        private readonly double ALPHA = 0.1;
         private DftTransform _dftTransform = new DftTransform();
+        public IFormula Formula { get; }
+
+        public FourierAlgorithm(IFormula encodingFormula)
+        {
+            Formula = encodingFormula;
+        }
+
         public async Task<Bitmap> EmbedAsync(Bitmap originalImage, Bitmap watermark)
         {
             return await Task.Run(() =>
@@ -40,13 +45,11 @@ namespace IPIO.Core.Algorithms
                 var vectorIndex = index.Item1 * width + index.Item2;
                 var coefficient = bestCoeficients[vectorIndex];
                 originalImage[coefficient.I, coefficient.J] =
-                    EmbeddFormula(coefficient.Value, watermarkValue);
+                    Formula.GetTransformedValue(coefficient.Value, watermarkValue);
             });
 
             return originalImage;
         }
-
-       
 
         private static List<Coefficient<Complex>> BestCoeficients(Complex[,] originalImage)
         {
@@ -65,12 +68,11 @@ namespace IPIO.Core.Algorithms
         {
             return array.MapForBlock(_dftTransform.Transform);
         }
+
         private Complex[,] ReverseTransform(Complex[,] array)
         {
             return array.MapForBlock(_dftTransform.UndoTransform);
         }
-
-
 
         public async Task<Bitmap> RetrieveAsync(Bitmap originalImage, Bitmap watermarkedImage, int watermarkLength)
         {
@@ -98,23 +100,10 @@ namespace IPIO.Core.Algorithms
                 var coefficient = bestCoeficients[i];
                 var originalValue = originalImage[coefficient.I, coefficient.J];
                 var encodedValue = dftWatermarked[coefficient.I, coefficient.J];
-                watermark[i / size, i % size] = ExtractFormula(encodedValue, originalValue);
+                watermark[i / size, i % size] = Formula.GetTransformedValue(encodedValue, originalValue);
             }
 
             return watermark;
-
-        }
-
-        private Complex EmbeddFormula(Complex originalvalue, Complex watermarkValue)
-        {
-            return originalvalue + ALPHA * Complex.Abs(originalvalue) * watermarkValue;
-        }
-
-        public Complex ExtractFormula(Complex encodedValue, Complex originalValue)
-        {
-            var value = ALPHA * Complex.Abs(originalValue);
-            value = value == 0 ? double.MaxValue : value;
-            return (encodedValue - originalValue) / value;
         }
     }
 }
